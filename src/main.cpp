@@ -7,7 +7,7 @@
 int main()
 {
     static const std::string SERVER_ADDRESS = "skaupper.tk";
-    static const int         SERVER_PORT    = 88881;
+    static const int         SERVER_PORT    = 8888;
     static const std::string NICKNAME       = "testuser";
 
     try {
