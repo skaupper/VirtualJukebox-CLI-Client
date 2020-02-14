@@ -1,5 +1,7 @@
 #include "api/api-v1.h"
 
+#include "Exception.h"
+
 #include <iostream>
 #include <cassert>
 
@@ -9,17 +11,16 @@ int main()
     static const std::string SERVER_ADDRESS = "skaupper.tk";
     static const int         SERVER_PORT    = 8888;
     static const std::string NICKNAME       = "testuser";
+    static const std::string ADMIN_PASSWORD = "admisn";
 
     try {
         APIv1 api;
         api.setServerAddress(SERVER_ADDRESS, SERVER_PORT);
-        api.generateSession(NICKNAME);
-
-        assert(!api.isAdmin());
-        assert(api.isSessionGenerated());
+        api.generateAdminSession(NICKNAME, ADMIN_PASSWORD);
 
         std::cout << "Session ID: " << api.getSessionId() << std::endl;
-    } catch (const NetworkException &ex) {
+        std::cout << "IsAdminSession: " << std::boolalpha << api.isAdmin() << std::endl;
+    } catch (const Exception &ex) {
         std::cerr << ex.what() << std::endl;
         return -1;
     }

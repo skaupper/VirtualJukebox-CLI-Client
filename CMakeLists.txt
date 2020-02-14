@@ -48,10 +48,17 @@ include(cmake/LibRestClient-cpp.cmake)
 # Source file containing the main entrypoint
 set(ENTRYPOINT_SOURCE   src/main.cpp)
 # All source file (excluding main) for the application
-set(APP_SOURCES         src/api/api-v1.cpp)
+set(APP_SOURCES         src/api/api-v1.cpp
+                        src/Exception.cpp
+                        src/exceptions/APIException.cpp
+                        src/exceptions/InvalidFormatException.cpp
+                        src/exceptions/NetworkException.cpp)
 
 set(APP_HEADER          src/api/api-v1.h
-                        src/types.h)
+                        src/Exception.h
+                        src/exceptions/APIException.h
+                        src/exceptions/InvalidFormatException.h
+                        src/exceptions/NetworkException.h)
 
 # Libraries and include directories of dependencies used by the application
 set(APP_LIBRARIES       ${LIBRESTCLIENT_LIBRARIES}

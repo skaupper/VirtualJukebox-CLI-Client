@@ -1,7 +1,7 @@
 #ifndef API_V1_H
 #define API_V1_H
 
-#include "types.h"
+#include <string>
 
 
 class APIv1
