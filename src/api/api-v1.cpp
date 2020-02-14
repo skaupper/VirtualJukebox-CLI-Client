@@ -3,6 +3,7 @@
 #include "json/json.hpp"
 #include <connection.h>
 
+#include <iostream>
 #include <sstream>
 
 
@@ -20,10 +21,30 @@ static std::string getRequestUrl(const std::string &address, int port, const std
 }
 
 
-void APIv1::setServerAddress(const std::string &address, int port)
+void APIv1::setServerAddress(const std::string &address, int port) noexcept
 {
-    this->address = address;
-    this->port = port;
+    mAddress = address;
+    mPort = port;
+}
+
+std::string APIv1::getSessionId() const
+{
+    if (!isSessionGenerated()) {
+        throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
+    }
+
+    return mSessionId;
+}
+
+
+bool APIv1::isAdmin() const noexcept
+{
+    return mIsAdmin;
+}
+
+bool APIv1::isSessionGenerated() const noexcept
+{
+    return mIsSessionGenerated;
 }
 
 
@@ -34,13 +55,13 @@ void APIv1::generateSession(const std::string &nickname)
     json requestBody = {
         { "nickname", nickname }
     };
-    std::string url = getRequestUrl(address, port, ENDPOINT);
+    std::string url = getRequestUrl(mAddress, mPort, ENDPOINT);
+
 
     auto resp = RestClient::post(url, "application/json", requestBody.dump());
     if (resp.code != 200) {
         throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
     }
-
 
     json body;
     try {
@@ -49,9 +70,10 @@ void APIv1::generateSession(const std::string &nickname)
         throw InvalidFormatException("JSON response has a invalid format", resp.body);
     }
 
-    this->sessionId = body["session_id"];
-    this->isAdmin = false;
-    this->isSessionGenerated = true;
+
+    mSessionId = body["session_id"];
+    mIsAdmin = false;
+    mIsSessionGenerated = true;
 }
 
 void APIv1::generateAdminSession(const std::string &nickname, const std::string &adminPassword)

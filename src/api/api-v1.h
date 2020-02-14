@@ -6,15 +6,21 @@
 
 class APIv1
 {
-    std::string address;
-    int port;
+    std::string mAddress;
+    int mPort;
 
-    std::string sessionId;
-    bool isAdmin;
-    bool isSessionGenerated = false;
+    std::string mSessionId;
+    bool mIsAdmin;
+    bool mIsSessionGenerated = false;
 
 public:
-    void setServerAddress(const std::string &addres, int port);
+    void setServerAddress(const std::string &address, int port) noexcept;
+
+    std::string getSessionId() const;
+
+    bool isAdmin() const noexcept;
+    bool isSessionGenerated() const noexcept;
+
 
     void generateSession(const std::string &nickname);
     void generateAdminSession(const std::string &nickname, const std::string &adminPassword);
