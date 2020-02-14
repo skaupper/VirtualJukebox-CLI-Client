@@ -22,7 +22,8 @@ set(CXX_STANDARD_REQUIRED ON)
 
 set(SRC_COMPILER_OPTIONS
         -Wall
-        -Wextra)
+        -Wextra
+        -Werror)
 
 ################################################################################
 # Include other CMake files
@@ -49,7 +50,8 @@ set(ENTRYPOINT_SOURCE   src/main.cpp)
 # All source file (excluding main) for the application
 set(APP_SOURCES         src/api/api-v1.cpp)
 
-set(APP_HEADER          src/api/api-v1.h)
+set(APP_HEADER          src/api/api-v1.h
+                        src/types.h)
 
 # Libraries and include directories of dependencies used by the application
 set(APP_LIBRARIES       ${LIBRESTCLIENT_LIBRARIES}
