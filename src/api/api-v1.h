@@ -1,20 +1,18 @@
+/*****************************************************************************/
+/**
+ * @file    api-v1.h
+ * @author  Sebastian Kaupper <kauppersebastian@gmail.com>
+ * @brief   Definition of REST API version 1
+ */
+/*****************************************************************************/
+
 #ifndef API_V1_H
 #define API_V1_H
 
-#include <string>
-#include <vector>
+#include "api-types.h"
 
-
-struct Track
+namespace api::v1
 {
-    std::string trackId;
-    std::string title;
-    std::string album;
-    std::string artist;
-    int duration;
-    std::string iconUri;
-};
-
 
 class APIv1
 {
@@ -34,9 +32,17 @@ public:
     bool isSessionGenerated() const noexcept;
 
 
+    //
+    // API methods
+    //
+
     void generateSession(const std::string &nickname);
     void generateAdminSession(const std::string &nickname, const std::string &adminPassword);
-    std::vector<Track> queryTracks(const std::string &pattern, int maxEntries = 10);
+    std::vector<BaseTrack> queryTracks(const std::string &pattern, int maxEntries = 10) const;
+    Queue getCurrentQueues() const;
+    void addTrackToNormalQueue(const BaseTrack &) const;
 };
+
+}
 
 #endif

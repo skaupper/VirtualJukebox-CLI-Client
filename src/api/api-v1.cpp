@@ -1,4 +1,14 @@
+/*****************************************************************************/
+/**
+ * @file    api-v1.cpp
+ * @author  Sebastian Kaupper <kauppersebastian@gmail.com>
+ * @brief   Implementation of REST API version 1
+ */
+/*****************************************************************************/
+
 #include "api-v1.h"
+
+#include "deserializer.h"
 
 #include "exceptions/APIException.h"
 #include "exceptions/NetworkException.h"
@@ -13,6 +23,7 @@
 
 
 using json = nlohmann::json;
+using namespace api::v1;
 
 
 static std::string getRequestUrl(const std::string &address, int port, const std::string &endpoint, const std::map<std::string, std::string> &parameters = {})
@@ -78,6 +89,7 @@ void APIv1::generateSession(const std::string &nickname)
 
     const auto resp = RestClient::post(url, "application/json", requestBody.dump());
     if (resp.code != 200) {
+        // TODO: parse error message (if any)
         throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
     }
 
@@ -88,8 +100,11 @@ void APIv1::generateSession(const std::string &nickname)
         throw InvalidFormatException("Response body is no valid JSON", resp.body);
     }
 
-
-    mSessionId          = body["session_id"];
+    try {
+        mSessionId      = body.at("session_id");
+    } catch (const json::out_of_range &) {
+        throw InvalidFormatException("Response misses field 'session_id'", body.dump());
+    }
     mIsAdmin            = false;
     mIsSessionGenerated = true;
 }
@@ -109,6 +124,7 @@ void APIv1::generateAdminSession(const std::string &nickname, const std::string 
     if (resp.code == 401) {
         throw APIException(APIExceptionCode::INVALID_PASSWORD);
     } else if (resp.code != 200) {
+        // TODO: parse error message (if any)
         throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
     }
 
@@ -120,13 +136,17 @@ void APIv1::generateAdminSession(const std::string &nickname, const std::string 
     }
 
 
-    mSessionId          = body["session_id"];
+    try {
+        mSessionId          = body.at("session_id");
+    } catch (const json::out_of_range &) {
+        throw InvalidFormatException("Response misses field 'session_id'", body.dump());
+    }
     mIsAdmin            = true;
     mIsSessionGenerated = true;
 }
 
 
-std::vector<Track> APIv1::queryTracks(const std::string &pattern, int maxEntries)
+std::vector<BaseTrack> APIv1::queryTracks(const std::string &pattern, int maxEntries) const
 {
     if (!isSessionGenerated()) {
         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
@@ -143,6 +163,7 @@ std::vector<Track> APIv1::queryTracks(const std::string &pattern, int maxEntries
 
     const auto resp = RestClient::get(url);
     if (resp.code != 200) {
+        // TODO: parse error message (if any)
         throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
     }
 
@@ -153,18 +174,90 @@ std::vector<Track> APIv1::queryTracks(const std::string &pattern, int maxEntries
         throw InvalidFormatException("Response body is no valid JSON", resp.body);
     }
 
-    std::vector<Track> tracks;
-    for (const auto &jsonTrack: body["tracks"]) {
-        // TODO: check for non-existent fields
-        Track track;
-        track.trackId  = jsonTrack["track_id"];
-        track.title    = jsonTrack["title"];
-        track.album    = jsonTrack["album"];
-        track.artist   = jsonTrack["artist"];
-        track.duration = jsonTrack["duration"];
-        track.iconUri  = jsonTrack["icon_uri"];
-        tracks.emplace_back(track);
+    std::vector<BaseTrack> tracks;
+    try {
+        tracks = deserialize<std::vector<BaseTrack>>(body.at("tracks"));
+    } catch (const json::out_of_range &) {
+        throw InvalidFormatException("An expected field could not be found in JSON object.", resp.body);
     }
 
     return tracks;
+}
+
+
+Queue APIv1::getCurrentQueues() const
+{
+    if (!isSessionGenerated()) {
+        throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
+    }
+
+    static const std::string ENDPOINT = "getCurrentQueues";
+
+    const auto parameters = std::map<std::string, std::string> {
+        { "session_id", mSessionId }
+    };
+    const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT, parameters);
+
+
+    const auto resp = RestClient::get(url);
+    if (resp.code != 200) {
+        // TODO: parse error message (if any)
+        throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
+    }
+
+    json body;
+    try {
+        body = json::parse(resp.body);
+    } catch (...) {
+        throw InvalidFormatException("Response body is no valid JSON", resp.body);
+    }
+
+
+    Queue queue;
+    try {
+        queue.currentlyPlaying = std::nullopt;
+        if (body.find("currently_playing") != body.end() && !body["currently_playing"].empty()) {
+            queue.currentlyPlaying = deserialize<PlayingTrack>(body["currently_playing"]);
+        }
+
+        queue.normalQueue = deserialize<std::vector<NormalQueueTrack>>(body.at("normal_queue"));
+        queue.adminQueue  = deserialize<std::vector<QueueTrack>>(body.at("admin_queue"));
+    } catch (const json::out_of_range &) {
+        throw InvalidFormatException("An expected field could not be found in JSON object.", resp.body);
+    }
+
+    return queue;
+}
+
+
+void APIv1::addTrackToNormalQueue(const BaseTrack &track) const
+{
+    if (!isSessionGenerated()) {
+        throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
+    }
+
+    static const std::string ENDPOINT = "addTrackToQueue";
+
+    const json requestBody = {
+        { "session_id", mSessionId },
+        { "track_id", track.trackId },
+        { "queue_type", "normal" }
+    };
+    const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT);
+
+
+    const auto resp = RestClient::post(url, "application/json", requestBody.dump());
+    // TODO: this endpoint may fail with other errors too
+    if (resp.code != 200) {
+        throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
+    }
+
+    json body;
+    try {
+        body = json::parse(resp.body);
+    } catch (...) {
+        throw InvalidFormatException("Response body is no valid JSON", resp.body);
+    }
+
+    // TODO: parse error message (if any)
 }

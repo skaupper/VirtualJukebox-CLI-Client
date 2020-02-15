@@ -49,12 +49,15 @@ include(cmake/LibRestClient-cpp.cmake)
 set(ENTRYPOINT_SOURCE   src/main.cpp)
 # All source file (excluding main) for the application
 set(APP_SOURCES         src/api/api-v1.cpp
+                        src/api/deserializer.cpp
                         src/Exception.cpp
                         src/exceptions/APIException.cpp
                         src/exceptions/InvalidFormatException.cpp
                         src/exceptions/NetworkException.cpp)
 
 set(APP_HEADER          src/api/api-v1.h
+                        src/api/api-types.h
+                        src/api/deserializer.h
                         src/Exception.h
                         src/exceptions/APIException.h
                         src/exceptions/InvalidFormatException.h

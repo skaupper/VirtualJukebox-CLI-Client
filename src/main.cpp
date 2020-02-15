@@ -14,18 +14,27 @@ int main()
     static const std::string ADMIN_PASSWORD = "admin";
 
     try {
-        APIv1 api;
+        api::v1::APIv1 api;
         api.setServerAddress(SERVER_ADDRESS, SERVER_PORT);
         api.generateAdminSession(NICKNAME, ADMIN_PASSWORD);
-        const auto tracks = api.queryTracks("linkin park", 10);
 
         std::cout << "Session ID: " << api.getSessionId() << std::endl;
         std::cout << "IsAdminSession: " << std::boolalpha << api.isAdmin() << std::endl;
         std::cout << std::endl;
 
-        for (const auto &track : tracks) {
-            std::cout << track.title << std::endl;
+
+        const auto tracks = api.queryTracks("linkin park", 10);
+        for (const auto &t : tracks) {
+            api.addTrackToNormalQueue(t);
         }
+        const auto queue = api.getCurrentQueues();
+
+        if (queue.currentlyPlaying.has_value()) {
+            std::cout << "Currently playing: " << queue.currentlyPlaying.value().title << std::endl;
+        } else {
+            std::cout << "No track is currently playing" << std::endl;
+        }
+
     } catch (const Exception &ex) {
         std::cerr << ex.what() << std::endl;
         return -1;
