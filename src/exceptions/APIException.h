@@ -6,7 +6,10 @@
 
 enum class APIExceptionCode : int {
     NO_SESSION_GENERATED,
-    INVALID_PASSWORD
+    INVALID_PASSWORD,
+    ADMIN_REQUIRED,
+    UNKNOWN_ENUM_VARIANT,
+    NOT_IMPLEMENTED
     // TODO: to be extended
 };
 

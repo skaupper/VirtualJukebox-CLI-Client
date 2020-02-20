@@ -5,9 +5,14 @@
 
 
 enum class NetworkExceptionCode : int {
-    UNAUTHORIZED    = 401,
-    FORBIDDEN       = 403,
-    NOT_FOUND       = 404
+    BAD_REQUEST           = 400,
+    UNAUTHORIZED          = 401,
+    FORBIDDEN             = 403,
+    NOT_FOUND             = 404,
+    UNPROCESSABLE_ENTITY  = 422,
+    LOGIN_TIME_OUT        = 440,
+    INTERNAL_SERVER_ERROR = 500,
+    BAD_GATEWAY           = 502
     // TODO: to be extended
 };
 

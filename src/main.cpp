@@ -25,7 +25,7 @@ int main()
 
         const auto tracks = api.queryTracks("linkin park", 10);
         for (const auto &t : tracks) {
-            api.addTrackToNormalQueue(t);
+            api.addTrack(t);
         }
         const auto queue = api.getCurrentQueues();
 

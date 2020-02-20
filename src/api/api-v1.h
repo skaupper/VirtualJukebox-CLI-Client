@@ -40,7 +40,12 @@ public:
     void generateAdminSession(const std::string &nickname, const std::string &adminPassword);
     std::vector<BaseTrack> queryTracks(const std::string &pattern, int maxEntries = 10) const;
     Queue getCurrentQueues() const;
-    void addTrackToNormalQueue(const BaseTrack &) const;
+    void addTrack(const BaseTrack &, QueueType = QueueType::NORMAL) const;
+    void voteTrack(const BaseTrack &, Vote vote) const;
+    void controlPlayer(PlayerAction action) const;
+    void moveTrack(const BaseTrack &, QueueType) const;
+    void removeTrack(const BaseTrack &) const;
+
 };
 
 }

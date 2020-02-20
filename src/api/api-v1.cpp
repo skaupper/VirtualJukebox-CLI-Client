@@ -26,6 +26,31 @@ using json = nlohmann::json;
 using namespace api::v1;
 
 
+static std::string to_string(PlayerAction action)
+{
+    switch (action)
+    {
+    case PlayerAction::PLAY:        return "play";
+    case PlayerAction::PAUSE:       return "pause";
+    case PlayerAction::SKIP:        return "skip";
+    case PlayerAction::VOLUME_UP:   return "volume_up";
+    case PlayerAction::VOLUME_DOWN: return "volume_down";
+
+    default: throw APIExceptionCode(APIExceptionCode::UNKNOWN_ENUM_VARIANT);
+    }
+}
+
+static std::string to_string(QueueType queueType)
+{
+    switch (queueType)
+    {
+    case QueueType::NORMAL: return "normal";
+    case QueueType::ADMIN:  return "admin";
+
+    default: throw APIExceptionCode(APIExceptionCode::UNKNOWN_ENUM_VARIANT);
+    }
+}
+
 static std::string getRequestUrl(const std::string &address, int port, const std::string &endpoint, const std::map<std::string, std::string> &parameters = {})
 {
     static const std::string ENDPOINT_BASE_PATH = "/api/v1";
@@ -229,11 +254,13 @@ Queue APIv1::getCurrentQueues() const
     return queue;
 }
 
-
-void APIv1::addTrackToNormalQueue(const BaseTrack &track) const
+void APIv1::addTrack(const BaseTrack &track, QueueType queueType) const
 {
     if (!isSessionGenerated()) {
         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
+    }
+    if (queueType == QueueType::ADMIN && !isAdmin()) {
+        throw APIException(APIExceptionCode::ADMIN_REQUIRED);
     }
 
     static const std::string ENDPOINT = "addTrackToQueue";
@@ -241,7 +268,7 @@ void APIv1::addTrackToNormalQueue(const BaseTrack &track) const
     const json requestBody = {
         { "session_id", mSessionId },
         { "track_id", track.trackId },
-        { "queue_type", "normal" }
+        { "queue_type", to_string(queueType) }
     };
     const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT);
 
@@ -260,4 +287,114 @@ void APIv1::addTrackToNormalQueue(const BaseTrack &track) const
     }
 
     // TODO: parse error message (if any)
+}
+
+void APIv1::voteTrack(const BaseTrack &track, Vote vote) const
+{
+    if (!isSessionGenerated()) {
+        throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
+    }
+
+    static const std::string ENDPOINT = "voteTrack";
+
+    const json requestBody = {
+        { "session_id", mSessionId },
+        { "track_id", track.trackId },
+        { "vote", static_cast<int>(vote) }
+    };
+    const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT);
+
+
+    const auto resp = RestClient::put(url, "application/json", requestBody.dump());
+    // TODO: this endpoint may fail with other errors too
+    if (resp.code != 200) {
+        throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
+    }
+
+    json body;
+    try {
+        body = json::parse(resp.body);
+    } catch (...) {
+        throw InvalidFormatException("Response body is no valid JSON", resp.body);
+    }
+
+    // TODO: parse error message (if any)
+}
+
+
+void APIv1::controlPlayer(PlayerAction action) const
+{
+    if (!isSessionGenerated()) {
+        throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
+    }
+    if (!isAdmin()) {
+        throw APIException(APIExceptionCode::ADMIN_REQUIRED);
+    }
+
+    static const std::string ENDPOINT = "controlPlayer";
+
+    const json requestBody = {
+        { "session_id", mSessionId },
+        { "player_action", to_string(action) }
+    };
+    const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT);
+
+
+    const auto resp = RestClient::put(url, "application/json", requestBody.dump());
+    // TODO: this endpoint may fail with other errors too
+    if (resp.code != 200) {
+        throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
+    }
+
+    json body;
+    try {
+        body = json::parse(resp.body);
+    } catch (...) {
+        throw InvalidFormatException("Response body is no valid JSON", resp.body);
+    }
+
+    // TODO: parse error message (if any)
+}
+
+void APIv1::moveTrack(const BaseTrack &track, QueueType queueType) const
+{
+    if (!isSessionGenerated()) {
+        throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
+    }
+    if (!isAdmin()) {
+        throw APIException(APIExceptionCode::ADMIN_REQUIRED);
+    }
+
+    static const std::string ENDPOINT = "moveTrack";
+
+    const json requestBody = {
+        { "session_id", mSessionId },
+        { "track_id", track.trackId },
+        { "queue_type", to_string(queueType) }
+    };
+    const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT);
+
+
+    const auto resp = RestClient::put(url, "application/json", requestBody.dump());
+    // TODO: this endpoint may fail with other errors too
+    if (resp.code != 200) {
+        throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
+    }
+
+    json body;
+    try {
+        body = json::parse(resp.body);
+    } catch (...) {
+        throw InvalidFormatException("Response body is no valid JSON", resp.body);
+    }
+
+    // TODO: parse error message (if any)
+}
+
+void APIv1::removeTrack(const BaseTrack &) const
+{
+    // This endpoint uses a request body for the DELETE endpoint
+    // instead of query parameters, which is not supported by restclient-cpp
+    // TODO: implement as soon as the server uses query parameters instead
+    throw APIException(APIExceptionCode::NOT_IMPLEMENTED);
 }
