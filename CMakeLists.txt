@@ -22,7 +22,8 @@ set(CXX_STANDARD_REQUIRED ON)
 
 set(SRC_COMPILER_OPTIONS
         -Wall
-        -Wextra)
+        -Wextra
+        -Werror)
 
 ################################################################################
 # Include other CMake files
@@ -47,9 +48,20 @@ include(cmake/LibRestClient-cpp.cmake)
 # Source file containing the main entrypoint
 set(ENTRYPOINT_SOURCE   src/main.cpp)
 # All source file (excluding main) for the application
-set(APP_SOURCES         src/api/api-v1.cpp)
+set(APP_SOURCES         src/api/api-v1.cpp
+                        src/api/deserializer.cpp
+                        src/Exception.cpp
+                        src/exceptions/APIException.cpp
+                        src/exceptions/InvalidFormatException.cpp
+                        src/exceptions/NetworkException.cpp)
 
-set(APP_HEADER          src/api/api-v1.h)
+set(APP_HEADER          src/api/api-v1.h
+                        src/api/api-types.h
+                        src/api/deserializer.h
+                        src/Exception.h
+                        src/exceptions/APIException.h
+                        src/exceptions/InvalidFormatException.h
+                        src/exceptions/NetworkException.h)
 
 # Libraries and include directories of dependencies used by the application
 set(APP_LIBRARIES       ${LIBRESTCLIENT_LIBRARIES}
