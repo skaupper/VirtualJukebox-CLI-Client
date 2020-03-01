@@ -49,7 +49,8 @@ include(cmake/LibRestClient-cpp.cmake)
 set(ENTRYPOINT_SOURCE   src/main.cpp)
 # All source file (excluding main) for the application
 set(APP_SOURCES         src/Exception.cpp
-                        src/shell.cpp
+                        src/shell/shell.cpp
+                        src/shell/commands/CmdHelp.cpp
                         src/api/api-v1.cpp
                         src/api/deserializer.cpp
                         src/exceptions/ShellException.cpp
@@ -58,7 +59,8 @@ set(APP_SOURCES         src/Exception.cpp
                         src/exceptions/NetworkException.cpp)
 
 set(APP_HEADER          src/Exception.h
-                        src/shell.h
+                        src/shell/shell.h
+                        src/shell/commands/CmdHelp.h
                         src/api/api-v1.h
                         src/api/api-types.h
                         src/api/deserializer.h

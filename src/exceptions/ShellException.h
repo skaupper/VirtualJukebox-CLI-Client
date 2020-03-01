@@ -5,13 +5,18 @@
 
 
 enum class ShellExceptionCode : int {
-    COMMAND_ALREADY_KNOWN
+    UNKNOWN_COMMAND,
+    COMMAND_ALREADY_EXISTS,
+    INVALID_ARGUMENTS
     // TODO: to be extended
 };
 
 class ShellException : public Exception {
+    ShellExceptionCode mCode;
+
 public:
     ShellException(ShellExceptionCode code);
+    ShellExceptionCode getCode() const;
 };
 
 
