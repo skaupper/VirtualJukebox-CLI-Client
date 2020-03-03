@@ -51,28 +51,60 @@ static std::string to_string(QueueType queueType)
     }
 }
 
-static std::string getRequestUrl(const std::string &address, int port, const std::string &endpoint, const std::map<std::string, std::string> &parameters = {})
+static std::string getRequestEndpoint(const std::string &endpoint, const std::map<std::string, std::string> &parameters = {})
 {
     static const std::string ENDPOINT_BASE_PATH = "/api/v1";
 
-    std::stringstream urlStream;
-    urlStream << "http://" << address << ":" << port << ENDPOINT_BASE_PATH << "/";
-    urlStream << endpoint;
-
+    std::stringstream endpointStream;
+    endpointStream << ENDPOINT_BASE_PATH << "/" << endpoint;
 
     bool firstParameter = true;
     for (const auto &kv: parameters) {
         if (firstParameter) {
-            urlStream << "?";
+            endpointStream << "?";
         } else {
-            urlStream << "&";
+            endpointStream << "&";
         }
-        urlStream << kv.first << "=" << kv.second;
+        endpointStream << kv.first << "=" << kv.second;
         firstParameter = false;
     }
 
+    return endpointStream.str();
+}
+
+static std::string getRequestUrl(const std::string &address, int port)
+{
+    std::stringstream urlStream;
+    urlStream << "http://" << address << ":" << port;
     return urlStream.str();
 }
+
+
+static RestClient::Connection createDefaultConnection(const std::string &url)
+{
+    RestClient::Connection conn(url);
+    conn.SetTimeout(2);
+    return conn;
+}
+
+static RestClient::Connection createDefaultConnection(const std::string &url, const std::string &contentType)
+{
+    auto conn = createDefaultConnection(url);
+    conn.AppendHeader("Content-Type", contentType);
+    return conn;
+}
+
+
+void api::v1::Initialize()
+{
+    RestClient::init();
+}
+
+void api::v1::Deinitialize()
+{
+    RestClient::disable();
+}
+
 
 
 void APIv1::setServerAddress(const std::string &address, int port) noexcept
@@ -104,15 +136,16 @@ bool APIv1::isSessionGenerated() const noexcept
 
 void APIv1::generateSession(const std::string &nickname)
 {
-    static const std::string ENDPOINT = "generateSession";
+    static const std::string ENDPOINT = "/generateSession";
 
     const json requestBody = {
         { "nickname", nickname }
     };
-    const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT);
+    const std::string url       = getRequestUrl(mAddress, mPort);
+    const std::string endpoint  = getRequestEndpoint(ENDPOINT);
 
 
-    const auto resp = RestClient::post(url, "application/json", requestBody.dump());
+    const auto resp = createDefaultConnection(url, "application/json").post(endpoint, requestBody.dump());
     if (resp.code != 200) {
         // TODO: parse error message (if any)
         throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
@@ -142,10 +175,10 @@ void APIv1::generateAdminSession(const std::string &nickname, const std::string 
         { "nickname", nickname },
         { "password", adminPassword }
     };
-    const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT);
+    const std::string url       = getRequestUrl(mAddress, mPort);
+    const std::string endpoint  = getRequestEndpoint(ENDPOINT);
 
-
-    const auto resp = RestClient::post(url, "application/json", requestBody.dump());
+    const auto resp = createDefaultConnection(url, "application/json").post(endpoint, requestBody.dump());
     if (resp.code == 401) {
         throw APIException(APIExceptionCode::INVALID_PASSWORD);
     } else if (resp.code != 200) {
@@ -183,10 +216,10 @@ std::vector<BaseTrack> APIv1::queryTracks(const std::string &pattern, int maxEnt
         { "pattern", pattern },
         { "max_entries", std::to_string(maxEntries) }
     };
-    const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT, parameters);
+    const std::string url       = getRequestUrl(mAddress, mPort);
+    const std::string endpoint  = getRequestEndpoint(ENDPOINT, parameters);
 
-
-    const auto resp = RestClient::get(url);
+    const auto resp = createDefaultConnection(url).get(endpoint);
     if (resp.code != 200) {
         // TODO: parse error message (if any)
         throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
@@ -221,10 +254,10 @@ Queue APIv1::getCurrentQueues() const
     const auto parameters = std::map<std::string, std::string> {
         { "session_id", mSessionId }
     };
-    const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT, parameters);
+    const std::string url       = getRequestUrl(mAddress, mPort);
+    const std::string endpoint  = getRequestEndpoint(ENDPOINT, parameters);
 
-
-    const auto resp = RestClient::get(url);
+    const auto resp = createDefaultConnection(url).get(endpoint);
     if (resp.code != 200) {
         // TODO: parse error message (if any)
         throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
@@ -270,10 +303,10 @@ void APIv1::addTrack(const BaseTrack &track, QueueType queueType) const
         { "track_id", track.trackId },
         { "queue_type", to_string(queueType) }
     };
-    const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT);
+    const std::string url       = getRequestUrl(mAddress, mPort);
+    const std::string endpoint  = getRequestEndpoint(ENDPOINT);
 
-
-    const auto resp = RestClient::post(url, "application/json", requestBody.dump());
+    const auto resp = createDefaultConnection(url, "application/json").post(endpoint, requestBody.dump());
     // TODO: this endpoint may fail with other errors too
     if (resp.code != 200) {
         throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
@@ -302,10 +335,10 @@ void APIv1::voteTrack(const BaseTrack &track, Vote vote) const
         { "track_id", track.trackId },
         { "vote", static_cast<int>(vote) }
     };
-    const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT);
+    const std::string url       = getRequestUrl(mAddress, mPort);
+    const std::string endpoint  = getRequestEndpoint(ENDPOINT);
 
-
-    const auto resp = RestClient::put(url, "application/json", requestBody.dump());
+    const auto resp = createDefaultConnection(url, "application/json").put(endpoint, requestBody.dump());
     // TODO: this endpoint may fail with other errors too
     if (resp.code != 200) {
         throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
@@ -337,10 +370,10 @@ void APIv1::controlPlayer(PlayerAction action) const
         { "session_id", mSessionId },
         { "player_action", to_string(action) }
     };
-    const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT);
+    const std::string url       = getRequestUrl(mAddress, mPort);
+    const std::string endpoint  = getRequestEndpoint(ENDPOINT);
 
-
-    const auto resp = RestClient::put(url, "application/json", requestBody.dump());
+    const auto resp = createDefaultConnection(url, "application/json").put(endpoint, requestBody.dump());
     // TODO: this endpoint may fail with other errors too
     if (resp.code != 200) {
         throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));
@@ -372,10 +405,10 @@ void APIv1::moveTrack(const BaseTrack &track, QueueType queueType) const
         { "track_id", track.trackId },
         { "queue_type", to_string(queueType) }
     };
-    const std::string url = getRequestUrl(mAddress, mPort, ENDPOINT);
+    const std::string url       = getRequestUrl(mAddress, mPort);
+    const std::string endpoint  = getRequestEndpoint(ENDPOINT);
 
-
-    const auto resp = RestClient::put(url, "application/json", requestBody.dump());
+    const auto resp = createDefaultConnection(url, "application/json").put(endpoint, requestBody.dump());
     // TODO: this endpoint may fail with other errors too
     if (resp.code != 200) {
         throw NetworkException(static_cast<NetworkExceptionCode>(resp.code));

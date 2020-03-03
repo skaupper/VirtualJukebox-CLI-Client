@@ -53,6 +53,7 @@ set(APP_SOURCES         src/Exception.cpp
                         src/shell/ShellCommand.cpp
                         src/shell/commands/CmdHelp.cpp
                         src/shell/commands/CmdExit.cpp
+                        src/shell/commands/CmdAPIv1.cpp
                         src/api/api-v1.cpp
                         src/api/deserializer.cpp
                         src/exceptions/ShellException.cpp
@@ -65,6 +66,7 @@ set(APP_HEADER          src/Exception.h
                         src/shell/ShellCommand.h
                         src/shell/commands/CmdHelp.h
                         src/shell/commands/CmdExit.h
+                        src/shell/commands/CmdAPIv1.h
                         src/api/api-v1.h
                         src/api/api-types.h
                         src/api/deserializer.h

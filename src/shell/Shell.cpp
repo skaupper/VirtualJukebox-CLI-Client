@@ -15,7 +15,6 @@ Shell::Shell(const std::string &prompt) : mPrompt(prompt)
     addCommand("exit", std::make_unique<CmdExit>());
 }
 
-
 void Shell::addCommand(const std::string &commandTrigger, std::unique_ptr<ShellCommand> &&command)
 {
     if (mCommands.find(commandTrigger) != mCommands.cend()) {
@@ -23,6 +22,18 @@ void Shell::addCommand(const std::string &commandTrigger, std::unique_ptr<ShellC
     }
     command->setTrigger(commandTrigger);
     mCommands[commandTrigger] = std::move(command);
+}
+
+std::unique_ptr<ShellCommand> Shell::removeCommand(const std::string &commandTrigger)
+{
+    auto commandIt = mCommands.find(commandTrigger);
+    if (commandIt == mCommands.cend()) {
+        throw ShellException(ShellExceptionCode::UNKNOWN_COMMAND);
+    }
+
+    auto result = std::move(commandIt->second);
+    mCommands.erase(commandIt);
+    return result;
 }
 
 void Shell::handleInputs(std::istream &in, std::ostream &out)
@@ -79,6 +90,10 @@ void Shell::handleInputs(std::istream &in, std::ostream &out)
                 case ShellExceptionCode::INVALID_ARGUMENTS:
                     out << ex.what() << std::endl;
                     out << "Try 'help " << command << "' for further information." << std::endl;
+                    break;
+
+                case ShellExceptionCode::NESTED:
+                    out << ex.what() << std::endl;
                     break;
 
                 default:

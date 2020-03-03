@@ -10,7 +10,7 @@ ShellCommandDetails CmdExit::getCommandDetails() const
 {
     ShellCommandDetails details;
     details.description = "Exits from the current shell.";
-    details.usage = "exit";
+    details.usage = getTrigger();
     details.parameterDescription = {};
     return details;
 }

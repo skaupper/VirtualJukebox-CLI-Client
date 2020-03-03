@@ -13,6 +13,8 @@
 
 namespace api::v1
 {
+    void Initialize();
+    void Deinitialize();
 
 class APIv1
 {

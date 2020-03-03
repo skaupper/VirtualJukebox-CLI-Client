@@ -1,6 +1,7 @@
 #include "ShellException.h"
 
 #include <sstream>
+#include <cassert>
 
 
 static std::string mapExceptionCodeToString(ShellExceptionCode code)
@@ -16,18 +17,24 @@ static std::string mapExceptionCodeToString(ShellExceptionCode code)
         case ShellExceptionCode::INVALID_ARGUMENTS:
             return "The arguments for the given command are invalid.";
 
+        case ShellExceptionCode::NESTED: // Nested exceptions get handled separately
         default:
             return "Unknown error (" + std::to_string(static_cast<int>(code)) + ")";
     }
 }
 
 
-ShellException::ShellException(ShellExceptionCode code) : mCode(code)
+ShellException::ShellException(ShellExceptionCode code, const Exception *nestedException) : mCode(code), mNestedException(nestedException)
 {
-    std::stringstream msg;
-    msg << "A shell error occurred: ";
-    msg << mapExceptionCodeToString(code);
-    setMsg(msg.str());
+    if (code == ShellExceptionCode::NESTED) {
+        assert(mNestedException);
+        setMsg(mNestedException->what());
+    } else {
+        std::stringstream msg;
+        msg << "A shell error occurred: ";
+        msg << mapExceptionCodeToString(code);
+        setMsg(msg.str());
+    }
 }
 
 ShellExceptionCode ShellException::getCode() const

@@ -25,6 +25,7 @@ class ShellCommand
 
 
 public:
+    virtual ~ShellCommand() = default;
     virtual bool execute(std::ostream &, const std::vector<std::string> &) = 0;
     virtual ShellCommandDetails getCommandDetails() const = 0;
 
