@@ -1,10 +1,10 @@
 find_program(
   CLANG_FORMAT_EXE
-  NAMES "clang-format-6.0"
-  DOC "Path to clang-format-6.0 executable"
+  NAMES "clang-format"
+  DOC "Path to clang-format executable"
   )
 if(NOT CLANG_FORMAT_EXE)
-  message(FATAL_ERROR "clang-format-6.0 not found.")
+  message(FATAL_ERROR "clang-format not found.")
 endif()
 
 function (clang_format_add_target)

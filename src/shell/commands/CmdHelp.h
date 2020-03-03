@@ -4,8 +4,7 @@
 #include "shell/ShellCommand.h"
 
 
-class CmdHelp : public ShellCommand
-{
+class CmdHelp : public ShellCommand {
     friend class Shell;
 
 public:

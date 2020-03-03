@@ -1,12 +1,11 @@
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
 
-#include <string>
 #include <exception>
+#include <string>
 
 
-class Exception : public std::exception
-{
+class Exception : public std::exception {
     std::string mMsg;
 
 protected:

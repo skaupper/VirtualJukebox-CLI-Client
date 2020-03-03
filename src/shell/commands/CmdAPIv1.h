@@ -1,12 +1,11 @@
 #ifndef CMD_APIV1_H
 #define CMD_APIV1_H
 
-#include "shell/ShellCommand.h"
 #include "api/api-v1.h"
+#include "shell/ShellCommand.h"
 
 
-class CmdAPIv1 : public ShellCommand
-{
+class CmdAPIv1 : public ShellCommand {
 public:
     CmdAPIv1(std::istream &, const std::string & = "ApiV1> ");
     ~CmdAPIv1();

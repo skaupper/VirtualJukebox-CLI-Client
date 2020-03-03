@@ -19,60 +19,55 @@
 using json = nlohmann::json;
 
 
+namespace api::v1 {
 
-namespace api::v1
-{
+    //
+    // Abstracted deserialization functions
+    //
 
-//
-// Abstracted deserialization functions
-//
+    namespace detail {
 
-namespace detail
-{
+        //
+        // Overloads for all known API types
+        //
 
-//
-// Overloads for all known API types
-//
-
-void deserialize(const json &, BaseTrack &);
-void deserialize(const json &, QueueTrack &);
-void deserialize(const json &, NormalQueueTrack &);
-void deserialize(const json &, PlayingTrack &);
+        void deserialize(const json &, BaseTrack &);
+        void deserialize(const json &, QueueTrack &);
+        void deserialize(const json &, NormalQueueTrack &);
+        void deserialize(const json &, PlayingTrack &);
 
 
-//
-// Specialization to deserialize items in a container type
-//
+        //
+        // Specialization to deserialize items in a container type
+        //
 
-template <typename T>
-void deserialize(const json &j, std::vector<T> &vec)
-{
-    for (const json &jsonEntry : j) {
-        T obj;
-        deserialize(jsonEntry, obj);
-        vec.emplace_back(obj);
+        template<typename T>
+        void deserialize(const json &j, std::vector<T> &vec) {
+            for (const json &jsonEntry : j) {
+                T obj;
+                deserialize(jsonEntry, obj);
+                vec.emplace_back(obj);
+            }
+        }
+
+    }  // namespace detail
+
+
+    //
+    // Function to be used by users
+    //
+
+    template<typename T>
+    T deserialize(const json &j) {
+        T t;
+        try {
+            detail::deserialize(j, t);
+        } catch (const json::out_of_range &) {
+            throw InvalidFormatException("An expected field of BaseTrack could not be found in JSON object.", j.dump());
+        }
+        return t;
     }
-}
 
-}
-
-
-//
-// Function to be used by users
-//
-
-template <typename T>
-T deserialize(const json &j)
-{
-    T t;
-    try {
-        detail::deserialize(j, t);
-    } catch (const json::out_of_range &) {
-        throw InvalidFormatException("An expected field of BaseTrack could not be found in JSON object.", j.dump());
-    }
-    return t;
-}
-
-}
+}  // namespace api::v1
 
 #endif

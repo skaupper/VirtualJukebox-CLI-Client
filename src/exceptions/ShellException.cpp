@@ -1,31 +1,29 @@
 #include "ShellException.h"
 
-#include <sstream>
 #include <cassert>
+#include <sstream>
 
 
-static std::string mapExceptionCodeToString(ShellExceptionCode code)
-{
-    switch(code)
-    {
-        case ShellExceptionCode::UNKNOWN_COMMAND:
-            return "The given command has not been found.";
+static std::string mapExceptionCodeToString(ShellExceptionCode code) {
+    switch (code) {
+    case ShellExceptionCode::UNKNOWN_COMMAND:
+        return "The given command has not been found.";
 
-        case ShellExceptionCode::COMMAND_ALREADY_EXISTS:
-            return "A command with the given name already exists.";
+    case ShellExceptionCode::COMMAND_ALREADY_EXISTS:
+        return "A command with the given name already exists.";
 
-        case ShellExceptionCode::INVALID_ARGUMENTS:
-            return "The arguments for the given command are invalid.";
+    case ShellExceptionCode::INVALID_ARGUMENTS:
+        return "The arguments for the given command are invalid.";
 
-        case ShellExceptionCode::NESTED: // Nested exceptions get handled separately
-        default:
-            return "Unknown error (" + std::to_string(static_cast<int>(code)) + ")";
+    case ShellExceptionCode::NESTED:  // Nested exceptions get handled separately
+    default:
+        return "Unknown error (" + std::to_string(static_cast<int>(code)) + ")";
     }
 }
 
 
-ShellException::ShellException(ShellExceptionCode code, const Exception *nestedException) : mCode(code), mNestedException(nestedException)
-{
+ShellException::ShellException(ShellExceptionCode code, const Exception *nestedException)
+    : mCode(code), mNestedException(nestedException) {
     if (code == ShellExceptionCode::NESTED) {
         assert(mNestedException);
         setMsg(mNestedException->what());
@@ -37,7 +35,6 @@ ShellException::ShellException(ShellExceptionCode code, const Exception *nestedE
     }
 }
 
-ShellExceptionCode ShellException::getCode() const
-{
+ShellExceptionCode ShellException::getCode() const {
     return mCode;
 }

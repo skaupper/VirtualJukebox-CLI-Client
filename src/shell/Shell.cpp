@@ -1,22 +1,19 @@
 #include "Shell.h"
 
-#include "commands/CmdHelp.h"
 #include "commands/CmdExit.h"
+#include "commands/CmdHelp.h"
 #include "exceptions/ShellException.h"
 
 #include <iostream>
 #include <sstream>
 
 
-
-Shell::Shell(const std::string &prompt) : mPrompt(prompt)
-{
+Shell::Shell(const std::string &prompt) : mPrompt(prompt) {
     addCommand("help", std::make_unique<CmdHelp>(CmdHelp(mCommands)));
     addCommand("exit", std::make_unique<CmdExit>());
 }
 
-void Shell::addCommand(const std::string &commandTrigger, std::unique_ptr<ShellCommand> &&command)
-{
+void Shell::addCommand(const std::string &commandTrigger, std::unique_ptr<ShellCommand> &&command) {
     if (mCommands.find(commandTrigger) != mCommands.cend()) {
         throw ShellException(ShellExceptionCode::COMMAND_ALREADY_EXISTS);
     }
@@ -24,8 +21,7 @@ void Shell::addCommand(const std::string &commandTrigger, std::unique_ptr<ShellC
     mCommands[commandTrigger] = std::move(command);
 }
 
-std::unique_ptr<ShellCommand> Shell::removeCommand(const std::string &commandTrigger)
-{
+std::unique_ptr<ShellCommand> Shell::removeCommand(const std::string &commandTrigger) {
     auto commandIt = mCommands.find(commandTrigger);
     if (commandIt == mCommands.cend()) {
         throw ShellException(ShellExceptionCode::UNKNOWN_COMMAND);
@@ -36,8 +32,7 @@ std::unique_ptr<ShellCommand> Shell::removeCommand(const std::string &commandTri
     return result;
 }
 
-void Shell::handleInputs(std::istream &in, std::ostream &out)
-{
+void Shell::handleInputs(std::istream &in, std::ostream &out) {
     std::string line;
 
     bool exit = false;
@@ -63,7 +58,7 @@ void Shell::handleInputs(std::istream &in, std::ostream &out)
         while (!std::getline(lineStream, arg, ' ').fail()) {
             if (first) {
                 command = arg;
-                first = false;
+                first   = false;
             } else {
                 arguments.push_back(arg);
             }
@@ -87,17 +82,17 @@ void Shell::handleInputs(std::istream &in, std::ostream &out)
             exit = commandIt->second->execute(out, arguments);
         } catch (const ShellException &ex) {
             switch (ex.getCode()) {
-                case ShellExceptionCode::INVALID_ARGUMENTS:
-                    out << ex.what() << std::endl;
-                    out << "Try 'help " << command << "' for further information." << std::endl;
-                    break;
+            case ShellExceptionCode::INVALID_ARGUMENTS:
+                out << ex.what() << std::endl;
+                out << "Try 'help " << command << "' for further information." << std::endl;
+                break;
 
-                case ShellExceptionCode::NESTED:
-                    out << ex.what() << std::endl;
-                    break;
+            case ShellExceptionCode::NESTED:
+                out << ex.what() << std::endl;
+                break;
 
-                default:
-                    throw;
+            default:
+                throw;
             }
         }
     }

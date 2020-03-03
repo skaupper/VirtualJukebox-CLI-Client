@@ -4,12 +4,11 @@
 
 #include "Exception.h"
 
-#include <iostream>
 #include <cassert>
+#include <iostream>
 
 
-int main()
-{
+int main() {
     Shell shell;
     shell.addCommand("connect", std::make_unique<CmdAPIv1>(std::cin));
     shell.handleInputs(std::cin, std::cout);
@@ -17,7 +16,7 @@ int main()
 
 
     static const std::string SERVER_ADDRESS = "skaupper.tk";
-    static const int         SERVER_PORT    = 8888;
+    static const int SERVER_PORT            = 8888;
     static const std::string NICKNAME       = "testuser";
     static const std::string ADMIN_PASSWORD = "admin";
 
