@@ -1,6 +1,7 @@
-#include "shell.h"
+#include "Shell.h"
 
 #include "commands/CmdHelp.h"
+#include "commands/CmdExit.h"
 #include "exceptions/ShellException.h"
 
 #include <iostream>
@@ -8,23 +9,10 @@
 
 
 
-
-std::string ShellCommand::getTrigger() const
-{
-    return mCommandTrigger;
-}
-
-void ShellCommand::setTrigger(const std::string &trigger)
-{
-    mCommandTrigger = trigger;
-}
-
-
-
-
-Shell::Shell()
+Shell::Shell(const std::string &prompt) : mPrompt(prompt)
 {
     addCommand("help", std::make_unique<CmdHelp>(CmdHelp(mCommands)));
+    addCommand("exit", std::make_unique<CmdExit>());
 }
 
 
@@ -39,14 +27,14 @@ void Shell::addCommand(const std::string &commandTrigger, std::unique_ptr<ShellC
 
 void Shell::handleInputs(std::istream &in, std::ostream &out)
 {
-    static const std::string PROMPT = "> ";
     std::string line;
 
-    while (true) {
+    bool exit = false;
+    while (!exit) {
         //
         // Print prompt and wait for input
         //
-        out << PROMPT;
+        out << mPrompt;
         if (!std::getline(in, line).good()) {
             break;
         }
@@ -61,7 +49,7 @@ void Shell::handleInputs(std::istream &in, std::ostream &out)
         bool first = true;
 
         std::stringstream lineStream(line);
-        while (std::getline(lineStream, arg).good()) {
+        while (!std::getline(lineStream, arg, ' ').fail()) {
             if (first) {
                 command = arg;
                 first = false;
@@ -85,7 +73,7 @@ void Shell::handleInputs(std::istream &in, std::ostream &out)
         // Execute command
         //
         try {
-            commandIt->second->execute(out, arguments);
+            exit = commandIt->second->execute(out, arguments);
         } catch (const ShellException &ex) {
             switch (ex.getCode()) {
                 case ShellExceptionCode::INVALID_ARGUMENTS:

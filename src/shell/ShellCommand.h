@@ -1,10 +1,12 @@
-#ifndef SHELL_H
-#define SHELL_H
+#ifndef SHELL_COMMAND_H
+#define SHELL_COMMAND_H
 
-#include <string>
-#include <vector>
+#include "Shell.h"
+
 #include <map>
-#include <memory>
+#include <vector>
+#include <string>
+#include <iostream>
 
 
 struct ShellCommandDetails
@@ -14,13 +16,16 @@ struct ShellCommandDetails
     std::map<std::string, std::string> parameterDescription = {};
 };
 
+
+class Shell;
+
 class ShellCommand
 {
     friend class Shell;
 
 
 public:
-    virtual void execute(std::ostream &, const std::vector<std::string> &) = 0;
+    virtual bool execute(std::ostream &, const std::vector<std::string> &) = 0;
     virtual ShellCommandDetails getCommandDetails() const = 0;
 
 protected:
@@ -32,19 +37,6 @@ private:
     std::string mCommandTrigger;
 };
 
-
-typedef std::map<std::string, std::unique_ptr<ShellCommand>> Commands;
-
-class Shell
-{
-public:
-    Shell();
-    void addCommand(const std::string &, std::unique_ptr<ShellCommand> &&);
-    void handleInputs(std::istream &, std::ostream &);
-
-private:
-    Commands mCommands;
-};
 
 
 #endif

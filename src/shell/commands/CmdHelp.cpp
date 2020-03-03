@@ -13,6 +13,8 @@ static void listCommands(std::ostream &out, const Commands *commands)
     for (const auto &[trigger, command] : *commands) {
         out << trigger << ": " << command->getCommandDetails().description << std::endl;
     }
+
+    out << std::endl;
 }
 
 static void printCommandHelp(std::ostream &out, const std::string &command, const Commands *commands)
@@ -31,6 +33,7 @@ static void printCommandHelp(std::ostream &out, const std::string &command, cons
     for (auto &[argument, desc] : details.parameterDescription) {
         out << argument << ": " << desc << std::endl;
     }
+    out << std::endl;
 }
 
 
@@ -39,7 +42,7 @@ CmdHelp::CmdHelp(const Commands &commands) : ShellCommand(), mCommands(&commands
 }
 
 
-void CmdHelp::execute(std::ostream &out, const std::vector<std::string> &arguments)
+bool CmdHelp::execute(std::ostream &out, const std::vector<std::string> &arguments)
 {
     if (arguments.size() > 1) {
         throw ShellException(ShellExceptionCode::INVALID_ARGUMENTS);
@@ -50,13 +53,15 @@ void CmdHelp::execute(std::ostream &out, const std::vector<std::string> &argumen
     } else {
         printCommandHelp(out, arguments[0], mCommands);
     }
+
+    return false;
 }
 
 ShellCommandDetails CmdHelp::getCommandDetails() const
 {
     ShellCommandDetails details;
     details.description = "Lists all available commands or prints the help text for one specific command.";
-    details.usage = getTrigger() + " [command]";
-    details.parameterDescription["command"] = "The command whose help text should be printed.";
+    details.usage = getTrigger() + " [<command>]";
+    details.parameterDescription["<command>"] = "The command whose help text should be printed.";
     return details;
 }

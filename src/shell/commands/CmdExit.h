@@ -1,20 +1,14 @@
-#ifndef CMD_HELP_H
-#define CMD_HELP_H
+#ifndef CMD_EXIT_H
+#define CMD_EXIT_H
 
 #include "shell/ShellCommand.h"
 
 
-class CmdHelp : public ShellCommand
+class CmdExit : public ShellCommand
 {
-    friend class Shell;
-
 public:
     bool execute(std::ostream &, const std::vector<std::string> &) override;
     ShellCommandDetails getCommandDetails() const override;
-
-private:
-    CmdHelp(const Commands &);
-    const Commands *mCommands;
 };
 
 

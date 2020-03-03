@@ -36,7 +36,7 @@ include(cmake/LibRestClient-cpp.cmake)
 # Find packages with built-in support
 ################################################################################
 
-# find_package(Threads)
+find_package(Threads)
 
 ################################################################################
 # Source files
@@ -49,8 +49,10 @@ include(cmake/LibRestClient-cpp.cmake)
 set(ENTRYPOINT_SOURCE   src/main.cpp)
 # All source file (excluding main) for the application
 set(APP_SOURCES         src/Exception.cpp
-                        src/shell/shell.cpp
+                        src/shell/Shell.cpp
+                        src/shell/ShellCommand.cpp
                         src/shell/commands/CmdHelp.cpp
+                        src/shell/commands/CmdExit.cpp
                         src/api/api-v1.cpp
                         src/api/deserializer.cpp
                         src/exceptions/ShellException.cpp
@@ -59,8 +61,10 @@ set(APP_SOURCES         src/Exception.cpp
                         src/exceptions/NetworkException.cpp)
 
 set(APP_HEADER          src/Exception.h
-                        src/shell/shell.h
+                        src/shell/Shell.h
+                        src/shell/ShellCommand.h
                         src/shell/commands/CmdHelp.h
+                        src/shell/commands/CmdExit.h
                         src/api/api-v1.h
                         src/api/api-types.h
                         src/api/deserializer.h
@@ -71,8 +75,7 @@ set(APP_HEADER          src/Exception.h
 
 # Libraries and include directories of dependencies used by the application
 set(APP_LIBRARIES       ${LIBRESTCLIENT_LIBRARIES}
-                        # ${CMAKE_THREAD_LIBS_INIT}
-                        )
+                        ${CMAKE_THREAD_LIBS_INIT})
 set(APP_INCLUDE_DIRS    src/
                         lib/
                         ${LIBRESTCLIENT_INCLUDE_DIRS})
