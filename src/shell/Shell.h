@@ -3,19 +3,18 @@
 
 #include "ShellCommand.h"
 
-#include <string>
+#include <iostream>
 #include <map>
 #include <memory>
-#include <iostream>
+#include <string>
 
 
 class ShellCommand;
-typedef std::map<std::string, std::unique_ptr<ShellCommand>> Commands;
+using Commands = std::map<std::string, std::unique_ptr<ShellCommand>>;
 
-class Shell
-{
+class Shell {
 public:
-    Shell(const std::string & = "> ");
+    Shell(std::string = "> ");
     void addCommand(const std::string &, std::unique_ptr<ShellCommand> &&);
     void handleInputs(std::istream &, std::ostream &);
 

@@ -4,8 +4,7 @@
 #include "shell/ShellCommand.h"
 
 
-class CmdExit : public ShellCommand
-{
+class CmdExit : public ShellCommand {
 public:
     bool execute(std::ostream &, const std::vector<std::string> &) override;
     ShellCommandDetails getCommandDetails() const override;

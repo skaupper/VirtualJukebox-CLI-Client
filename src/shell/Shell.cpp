@@ -1,23 +1,20 @@
 #include "Shell.h"
 
-#include "commands/CmdHelp.h"
 #include "commands/CmdExit.h"
+#include "commands/CmdHelp.h"
 #include "exceptions/ShellException.h"
 
 #include <iostream>
 #include <sstream>
 
 
-
-Shell::Shell(const std::string &prompt) : mPrompt(prompt)
-{
+Shell::Shell(std::string prompt) : mPrompt(std::move(prompt)) {
     addCommand("help", std::make_unique<CmdHelp>(CmdHelp(mCommands)));
     addCommand("exit", std::make_unique<CmdExit>());
 }
 
 
-void Shell::addCommand(const std::string &commandTrigger, std::unique_ptr<ShellCommand> &&command)
-{
+void Shell::addCommand(const std::string &commandTrigger, std::unique_ptr<ShellCommand> &&command) {
     if (mCommands.find(commandTrigger) != mCommands.cend()) {
         throw ShellException(ShellExceptionCode::COMMAND_ALREADY_EXISTS);
     }
@@ -25,8 +22,7 @@ void Shell::addCommand(const std::string &commandTrigger, std::unique_ptr<ShellC
     mCommands[commandTrigger] = std::move(command);
 }
 
-void Shell::handleInputs(std::istream &in, std::ostream &out)
-{
+void Shell::handleInputs(std::istream &in, std::ostream &out) {
     std::string line;
 
     bool exit = false;
@@ -52,7 +48,7 @@ void Shell::handleInputs(std::istream &in, std::ostream &out)
         while (!std::getline(lineStream, arg, ' ').fail()) {
             if (first) {
                 command = arg;
-                first = false;
+                first   = false;
             } else {
                 arguments.push_back(arg);
             }
@@ -76,13 +72,13 @@ void Shell::handleInputs(std::istream &in, std::ostream &out)
             exit = commandIt->second->execute(out, arguments);
         } catch (const ShellException &ex) {
             switch (ex.getCode()) {
-                case ShellExceptionCode::INVALID_ARGUMENTS:
-                    out << ex.what() << std::endl;
-                    out << "Try 'help " << command << "' for further information." << std::endl;
-                    break;
+            case ShellExceptionCode::INVALID_ARGUMENTS:
+                out << ex.what() << std::endl;
+                out << "Try 'help " << command << "' for further information." << std::endl;
+                break;
 
-                default:
-                    throw;
+            default:
+                throw;
             }
         }
     }

@@ -15,7 +15,7 @@ class ShellException : public Exception {
     ShellExceptionCode mCode;
 
 public:
-    ShellException(ShellExceptionCode code);
+    explicit ShellException(ShellExceptionCode code);
     ShellExceptionCode getCode() const;
 };
 

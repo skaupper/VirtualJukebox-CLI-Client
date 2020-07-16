@@ -4,8 +4,7 @@
 #include "shell/ShellCommand.h"
 
 
-class CmdHelp : public ShellCommand
-{
+class CmdHelp : public ShellCommand {
     friend class Shell;
 
 public:
@@ -13,8 +12,8 @@ public:
     ShellCommandDetails getCommandDetails() const override;
 
 private:
-    CmdHelp(const Commands &);
-    const Commands *mCommands;
+    explicit CmdHelp(const Commands &);
+    const Commands &mCommands;
 };
 
 

@@ -15,7 +15,7 @@ enum class APIExceptionCode : int {
 
 class APIException : public Exception {
 public:
-    APIException(APIExceptionCode code);
+    explicit APIException(APIExceptionCode code);
 };
 
 

@@ -4,7 +4,8 @@
 #include "Exception.h"
 
 
-enum class NetworkExceptionCode : int {
+enum class NetworkExceptionCode {
+    FAILED_TO_CONNECT     = 1,
     BAD_REQUEST           = 400,
     UNAUTHORIZED          = 401,
     FORBIDDEN             = 403,
@@ -19,7 +20,7 @@ enum class NetworkExceptionCode : int {
 
 class NetworkException : public Exception {
 public:
-    NetworkException(NetworkExceptionCode code);
+    explicit NetworkException(NetworkExceptionCode code);
 };
 
 #endif
