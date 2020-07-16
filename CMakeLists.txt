@@ -1,106 +1,36 @@
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.15)
 
-project(VirtualJukebox-CLI-Client)
+project(VirtualJukebox-CLI-Client CXX)
 
-cmake_policy(SET CMP0054 NEW)
+# Include all CMake scripts
+include(cmake/StandardProjectSettings.cmake)
+include(cmake/PreventInSourceBuilds.cmake)
+include(cmake/Cache.cmake)
+include(cmake/StaticAnalyzers.cmake)
+include(cmake/Sanitizers.cmake)
+include(cmake/CompilerWarnings.cmake)
+include(cmake/Conan.cmake)
 
-################################################################################
-# Set default values for input parameter
-################################################################################
+# Add interface libraries
+add_library(project_options INTERFACE)
+add_library(project_warnings INTERFACE)
+add_library(lib_options INTERFACE)
 
-# Build debug version by default, unless specified otherwise
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
-endif()
+target_compile_features(project_options INTERFACE cxx_std_17)
+enable_sanitizers(project_options)
+set_project_warnings(project_warnings)
 
-################################################################################
-# Compiler settings
-################################################################################
+target_compile_features(lib_options INTERFACE cxx_std_17)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CXX_STANDARD_REQUIRED ON)
+# Deactivate the ABI-change warning on ARM
+target_compile_options(project_warnings INTERFACE "-Wno-psabi")
 
-set(SRC_COMPILER_OPTIONS
-        -Wall
-        -Wextra
-        -Werror)
+# Configure and run conan
+set(CONAN_EXTRA_REQUIRES tl-optional/1.0.0 nlohmann_json/3.8.0)
+set(CONAN_EXTRA_OPTIONS)
 
-################################################################################
-# Include other CMake files
-################################################################################
+run_conan()
 
-include(cmake/ClangFormat.cmake)
-include(cmake/LibRestClient-cpp.cmake)
-
-################################################################################
-# Find packages with built-in support
-################################################################################
-
-find_package(Threads)
-
-################################################################################
-# Source files
-################################################################################
-
-# Application and tests
-#-------------------------------------------------------------------------------
-
-# Source file containing the main entrypoint
-set(ENTRYPOINT_SOURCE   src/main.cpp)
-# All source file (excluding main) for the application
-set(APP_SOURCES         src/Exception.cpp
-                        src/shell/Shell.cpp
-                        src/shell/ShellCommand.cpp
-                        src/shell/commands/CmdHelp.cpp
-                        src/shell/commands/CmdExit.cpp
-                        src/api/api-v1.cpp
-                        src/api/deserializer.cpp
-                        src/exceptions/ShellException.cpp
-                        src/exceptions/APIException.cpp
-                        src/exceptions/InvalidFormatException.cpp
-                        src/exceptions/NetworkException.cpp)
-
-set(APP_HEADER          src/Exception.h
-                        src/shell/Shell.h
-                        src/shell/ShellCommand.h
-                        src/shell/commands/CmdHelp.h
-                        src/shell/commands/CmdExit.h
-                        src/api/api-v1.h
-                        src/api/api-types.h
-                        src/api/deserializer.h
-                        src/exceptions/ShellException.h
-                        src/exceptions/APIException.h
-                        src/exceptions/InvalidFormatException.h
-                        src/exceptions/NetworkException.h)
-
-# Libraries and include directories of dependencies used by the application
-set(APP_LIBRARIES       ${LIBRESTCLIENT_LIBRARIES}
-                        ${CMAKE_THREAD_LIBS_INIT})
-set(APP_INCLUDE_DIRS    src/
-                        lib/
-                        ${LIBRESTCLIENT_INCLUDE_DIRS})
-
-# Specify sources for formatting
-set(FORMATTING_SOURCES ${ENTRYPOINT_SOURCE} ${APP_SOURCES} ${APP_HEADER} ${TEST_SOURCES} ${TEST_HEADER})
-
-################################################################################
-# Targets
-################################################################################
-
-# Compile the sources of the main application into an OBJECT library
-#-------------------------------------------------------------------------------
-set(APP_OBJECTS app_object_library)
-add_library(${APP_OBJECTS} OBJECT ${APP_SOURCES} ${APP_HEADER})
-target_compile_options(${APP_OBJECTS} PRIVATE ${SRC_COMPILER_OPTIONS})
-
-
-# Main program executable
-#-------------------------------------------------------------------------------
-include_directories(${APP_INCLUDE_DIRS})
-add_executable(${PROJECT_NAME} ${ENTRYPOINT_SOURCE} $<TARGET_OBJECTS:${APP_OBJECTS}>)
-target_link_libraries(${PROJECT_NAME} ${APP_LIBRARIES})
-target_compile_options(${PROJECT_NAME} PRIVATE ${SRC_COMPILER_OPTIONS})
-
-# Other
-#-------------------------------------------------------------------------------
-clang_format_add_target(${FORMATTING_SOURCES})
+# Compile targets
+add_subdirectory(lib)
+add_subdirectory(src)
