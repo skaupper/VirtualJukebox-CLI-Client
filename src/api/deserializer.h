@@ -36,6 +36,8 @@ namespace api::v1 {
         void deserialize(const json &, NormalQueueTrack &);
         void deserialize(const json &, PlayingTrack &);
 
+        void deserialize(const json &, Queue &);
+
 
         //
         // Specialization to deserialize items in a container type

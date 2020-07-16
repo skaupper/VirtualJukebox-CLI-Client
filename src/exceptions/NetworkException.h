@@ -20,7 +20,7 @@ enum class NetworkExceptionCode {
 
 class NetworkException : public Exception {
 public:
-    explicit NetworkException(NetworkExceptionCode code);
+    NetworkException(NetworkExceptionCode code, const std::string &description);
 };
 
 #endif

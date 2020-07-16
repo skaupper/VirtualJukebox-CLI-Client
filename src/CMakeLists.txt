@@ -19,7 +19,7 @@ target_link_libraries(
     PRIVATE project_options
             project_warnings
             project_libs
-            CONAN_PKG::docopt.cpp
             CONAN_PKG::spdlog
-            CONAN_PKG::tl-optional
             CONAN_PKG::nlohmann_json)
+
+target_precompile_headers(virtualjukebox-cli PRIVATE <nlohmann/json.hpp>)

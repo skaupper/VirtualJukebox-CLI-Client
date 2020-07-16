@@ -11,18 +11,34 @@
 
 #include "api-types.h"
 
+#include <httplib/httplib.h>
+#include <nlohmann/json.hpp>
+
+
 namespace api::v1 {
 
     class APIv1 {
         std::string mAddress;
         int mPort;
+        httplib::Client mClient;
 
         std::string mSessionId;
         bool mIsAdmin;
         bool mIsSessionGenerated = false;
 
+    private:
+        nlohmann::json doGetRequest(const char *const url);
+        nlohmann::json doGetRequest(const std::string &url);
+
+        nlohmann::json doPostRequest(const char *const url, const nlohmann::json &requestBody);
+        nlohmann::json doPostRequest(const std::string &url, const nlohmann::json &requestBody);
+
+        nlohmann::json doPutRequest(const char *const url, const nlohmann::json &requestBody);
+        nlohmann::json doPutRequest(const std::string &url, const nlohmann::json &requestBody);
+
+
     public:
-        void setServerAddress(const std::string &address, int port) noexcept;
+        APIv1(const std::string &address, int port) noexcept;
 
         std::string getSessionId() const;
 
@@ -36,13 +52,13 @@ namespace api::v1 {
 
         void generateSession(const std::string &nickname);
         void generateAdminSession(const std::string &nickname, const std::string &adminPassword);
-        std::vector<BaseTrack> queryTracks(const std::string &pattern, int maxEntries = 10) const;
-        Queue getCurrentQueues() const;
-        void addTrack(const BaseTrack &, QueueType = QueueType::NORMAL) const;
-        void voteTrack(const BaseTrack &, Vote vote) const;
-        void controlPlayer(PlayerAction action) const;
-        void moveTrack(const BaseTrack &, QueueType) const;
-        void removeTrack(const BaseTrack &) const;
+        std::vector<BaseTrack> queryTracks(const std::string &pattern, int maxEntries = 10);
+        Queue getCurrentQueues();
+        void addTrack(const BaseTrack &, QueueType = QueueType::NORMAL);
+        void voteTrack(const BaseTrack &, Vote vote);
+        void controlPlayer(PlayerAction action);
+        void moveTrack(const BaseTrack &, QueueType);
+        void removeTrack(const BaseTrack &);
     };
 
 }  // namespace api::v1

@@ -24,7 +24,6 @@ static std::string mapExceptionCodeToString(APIExceptionCode code) {
 
 APIException::APIException(APIExceptionCode code) {
     std::stringstream msg;
-    msg << "An API error occurred: ";
     msg << mapExceptionCodeToString(code);
     setMsg(msg.str());
 }

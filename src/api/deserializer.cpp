@@ -47,4 +47,15 @@ namespace api::v1::detail {
         track.playingFor = j.at("playing_for");
     }
 
+
+    void deserialize(const json &j, Queue &queue) {
+        queue.currentlyPlaying = std::nullopt;
+        if (j.find("currently_playing") != j.end() && !j["currently_playing"].empty()) {
+            queue.currentlyPlaying = api::v1::deserialize<PlayingTrack>(static_cast<json>(j["currently_playing"]));
+        }
+
+        queue.normalQueue = api::v1::deserialize<std::vector<NormalQueueTrack>>(j.at("normal_queue"));
+        queue.adminQueue  = api::v1::deserialize<std::vector<QueueTrack>>(j.at("admin_queue"));
+    }
+
 }  // namespace api::v1::detail

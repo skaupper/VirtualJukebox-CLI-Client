@@ -22,7 +22,6 @@ static std::string mapExceptionCodeToString(ShellExceptionCode code) {
 
 ShellException::ShellException(ShellExceptionCode code) : mCode(code) {
     std::stringstream msg;
-    msg << "A shell error occurred: ";
     msg << mapExceptionCodeToString(code);
     setMsg(msg.str());
 }

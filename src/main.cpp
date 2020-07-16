@@ -3,11 +3,15 @@
 
 #include "Exception.h"
 
+#include <spdlog/spdlog.h>
+
 #include <cassert>
 #include <iostream>
 
 
 int main() {
+    spdlog::set_level(spdlog::level::debug);
+
     // Shell shell;
     // shell.handleInputs(std::cin, std::cout);
 
@@ -18,8 +22,7 @@ int main() {
     constexpr auto ADMIN_PASSWORD {"admin"};
 
     try {
-        api::v1::APIv1 api;
-        api.setServerAddress(SERVER_ADDRESS, SERVER_PORT);
+        api::v1::APIv1 api(SERVER_ADDRESS, SERVER_PORT);
         api.generateAdminSession(NICKNAME, ADMIN_PASSWORD);
 
         std::cout << "Session ID: " << api.getSessionId() << std::endl;
@@ -27,7 +30,7 @@ int main() {
         std::cout << std::endl;
 
 
-        const auto tracks = api.queryTracks("offspring", 10);
+        const auto tracks = api.queryTracks("offspring", 2);
         for (const auto &t : tracks) {
             api.addTrack(t);
         }

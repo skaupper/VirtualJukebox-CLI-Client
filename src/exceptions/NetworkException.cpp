@@ -28,9 +28,8 @@ static std::string mapExceptionCodeToString(NetworkExceptionCode code) {
 }
 
 
-NetworkException::NetworkException(NetworkExceptionCode code) {
+NetworkException::NetworkException(NetworkExceptionCode code, const std::string &desc) {
     std::stringstream msg;
-    msg << "A network error occurred: ";
-    msg << mapExceptionCodeToString(code);
+    msg << mapExceptionCodeToString(code) << ": " << desc;
     setMsg(msg.str());
 }

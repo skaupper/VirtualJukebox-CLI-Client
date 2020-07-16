@@ -17,6 +17,7 @@
 
 #include <httplib/httplib.h>
 #include <nlohmann/json.hpp>
+#include <spdlog/spdlog.h>
 
 #include <iostream>
 #include <map>
@@ -27,23 +28,28 @@ using json = nlohmann::json;
 using namespace api::v1;
 
 
-// static std::string to_string(PlayerAction action) {
-//     switch (action) {
-//     case PlayerAction::PLAY:
-//         return "play";
-//     case PlayerAction::PAUSE:
-//         return "pause";
-//     case PlayerAction::SKIP:
-//         return "skip";
-//     case PlayerAction::VOLUME_UP:
-//         return "volume_up";
-//     case PlayerAction::VOLUME_DOWN:
-//         return "volume_down";
+//
+// Helper functions
+//
 
-//     default:
-//         throw APIException(APIExceptionCode::UNKNOWN_ENUM_VARIANT);
-//     }
-// }
+
+static std::string to_string(PlayerAction action) {
+    switch (action) {
+    case PlayerAction::PLAY:
+        return "play";
+    case PlayerAction::PAUSE:
+        return "pause";
+    case PlayerAction::SKIP:
+        return "skip";
+    case PlayerAction::VOLUME_UP:
+        return "volume_up";
+    case PlayerAction::VOLUME_DOWN:
+        return "volume_down";
+
+    default:
+        throw APIException(APIExceptionCode::UNKNOWN_ENUM_VARIANT);
+    }
+}
 
 static std::string to_string(QueueType queueType) {
     switch (queueType) {
@@ -83,10 +89,11 @@ static std::string getRequestEndpoint(const std::string &endpoint,
 }
 
 
-void APIv1::setServerAddress(const std::string &address, int port) noexcept {
-    mAddress = address;
-    mPort    = port;
-}
+//
+// Constructors and Getters
+//
+
+APIv1::APIv1(const std::string &address, int port) noexcept : mAddress(address), mPort(port), mClient(address, port) {}
 
 std::string APIv1::getSessionId() const {
     if (!isSessionGenerated()) {
@@ -102,82 +109,122 @@ bool APIv1::isAdmin() const noexcept { return mIsAdmin; }
 bool APIv1::isSessionGenerated() const noexcept { return mIsSessionGenerated; }
 
 
-void APIv1::generateSession(const std::string &nickname) {
-    constexpr auto ENDPOINT {"generateSession"};
+//
+// Request helpers
+//
 
-    const json requestBody = {
-        {"nickname", nickname}  //
-    };
-
-
-    httplib::Client client {mAddress, mPort};
-    const auto resp {client.Post(getRequestEndpoint(ENDPOINT).c_str(), requestBody.dump(), "application/json")};
-
+static void verifyResponse(const std::shared_ptr<httplib::Response> &resp) {
     if (!resp) {
-        throw NetworkException(NetworkExceptionCode::FAILED_TO_CONNECT);
-    }
-    if (resp->status != static_cast<int>(HttpStatus::OK)) {
-        // TODO: parse error message (if any)
-        throw NetworkException(static_cast<NetworkExceptionCode>(resp->status));
+        throw NetworkException(NetworkExceptionCode::FAILED_TO_CONNECT, "The response pointer was equal to nullptr.");
     }
 
-    json body;
+    if (resp->status == static_cast<int>(api::HttpStatus::UNAUTHORIZED)) {
+        throw APIException(APIExceptionCode::INVALID_PASSWORD);
+    }
+
+
+    if (resp->status != static_cast<int>(api::HttpStatus::OK)) {
+        // TODO: parse error message (if any)
+        throw NetworkException(static_cast<NetworkExceptionCode>(resp->status), resp->body);
+    }
+}
+
+static json extractJsonBody(const std::shared_ptr<httplib::Response> &resp) {
     try {
-        body = json::parse(resp->body);
+        return json::parse(resp->body);
     } catch (...) {
         throw InvalidFormatException("Response body is no valid JSON", resp->body);
     }
+}
+
+
+json APIv1::doGetRequest(const char *const url) {
+    const auto resp {mClient.Get(url)};
+    verifyResponse(resp);
+    return extractJsonBody(resp);
+}
+
+json APIv1::doPostRequest(const char *const url, const json &requestBody) {
+    const auto resp {mClient.Post(url, requestBody.dump(), "application/json")};
+
+    verifyResponse(resp);
+    return extractJsonBody(resp);
+}
+
+json APIv1::doPutRequest(const char *const url, const json &requestBody) {
+    const auto resp {mClient.Put(url, requestBody.dump(), "application/json")};
+
+    verifyResponse(resp);
+    return extractJsonBody(resp);
+}
+
+
+json APIv1::doGetRequest(const std::string &url) { return doGetRequest(url.c_str()); }
+json APIv1::doPostRequest(const std::string &url, const json &requestBody) {
+    return doPostRequest(url.c_str(), requestBody);
+}
+json APIv1::doPutRequest(const std::string &url, const json &requestBody) {
+    return doPutRequest(url.c_str(), requestBody);
+}
+
+
+//
+// Actual endpoint implementations
+//
+
+void APIv1::generateSession(const std::string &nickname) {
+    spdlog::debug("APIv1::generateSession: {}", nickname);
+
+    constexpr auto ENDPOINT {"generateSession"};
+
+    const json requestBody {
+        {"nickname", nickname}  //
+    };
+
+    const auto body = doPostRequest(getRequestEndpoint(ENDPOINT), requestBody);
 
     try {
         mSessionId = body.at("session_id");
     } catch (const json::out_of_range &) {
         throw InvalidFormatException("Response misses field 'session_id'", body.dump());
+    } catch (const json::type_error &) {
+        throw InvalidFormatException("Received JSON object is of wrong type", body.dump());
     }
+
     mIsAdmin            = false;
     mIsSessionGenerated = true;
 }
 
 void APIv1::generateAdminSession(const std::string &nickname, const std::string &adminPassword) {
+    spdlog::debug("APIv1::generateAdminSession: {}, {}", nickname, adminPassword);
+
     constexpr auto ENDPOINT {"generateSession"};
 
-    const json requestBody = {
+    const json requestBody {
         {"nickname", nickname},      //
         {"password", adminPassword}  //
     };
 
-    httplib::Client client {mAddress, mPort};
-    const auto resp {client.Post(getRequestEndpoint(ENDPOINT).c_str(), requestBody.dump(), "application/json")};
-
-    if (!resp) {
-        throw NetworkException(NetworkExceptionCode::FAILED_TO_CONNECT);
-    }
-    if (resp->status == static_cast<int>(HttpStatus::UNAUTHORIZED)) {
-        throw APIException(APIExceptionCode::INVALID_PASSWORD);
-    }
-    if (resp->status != static_cast<int>(HttpStatus::OK)) {
-        // TODO: parse error message (if any)
-        throw NetworkException(static_cast<NetworkExceptionCode>(resp->status));
-    }
-
-    json body;
-    try {
-        body = json::parse(resp->body);
-    } catch (...) {
-        throw InvalidFormatException("Response body is no valid JSON", resp->body);
-    }
+    const auto body = doPostRequest(getRequestEndpoint(ENDPOINT), requestBody);
 
 
     try {
         mSessionId = body.at("session_id");
     } catch (const json::out_of_range &) {
         throw InvalidFormatException("Response misses field 'session_id'", body.dump());
+    } catch (const json::type_error &) {
+        throw InvalidFormatException("Received JSON object is of wrong type", body.dump());
     }
+
+
     mIsAdmin            = true;
     mIsSessionGenerated = true;
 }
 
 
-std::vector<BaseTrack> APIv1::queryTracks(const std::string &pattern, int maxEntries) const {
+std::vector<BaseTrack> APIv1::queryTracks(const std::string &pattern, int maxEntries) {
+    spdlog::debug("APIv1::queryTracks: {}, {}", pattern, maxEntries);
+
     if (!isSessionGenerated()) {
         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
     }
@@ -188,36 +235,22 @@ std::vector<BaseTrack> APIv1::queryTracks(const std::string &pattern, int maxEnt
         {"pattern", pattern},                        //
         {"max_entries", std::to_string(maxEntries)}  //
     };
-    const std::string url {getRequestEndpoint(ENDPOINT, parameters)};
+    const auto body = doGetRequest(getRequestEndpoint(ENDPOINT, parameters));
 
-
-    httplib::Client client {mAddress, mPort};
-    const auto resp {client.Get(url.c_str())};
-
-    if (!resp) {
-        throw NetworkException(NetworkExceptionCode::FAILED_TO_CONNECT);
-    }
-    if (resp->status != static_cast<int>(HttpStatus::OK)) {
-        // TODO: parse error message (if any)
-        throw NetworkException(static_cast<NetworkExceptionCode>(resp->status));
-    }
-
-    json body;
-    try {
-        body = json::parse(resp->body);
-    } catch (...) {
-        throw InvalidFormatException("Response body is no valid JSON", resp->body);
-    }
 
     try {
         return deserialize<std::vector<BaseTrack>>(body.at("tracks"));
     } catch (const json::out_of_range &) {
-        throw InvalidFormatException("An expected field could not be found in JSON object.", resp->body);
+        throw InvalidFormatException("An expected field could not be found in JSON object.", body.dump());
+    } catch (const json::type_error &) {
+        throw InvalidFormatException("Received JSON object is of wrong type", body.dump());
     }
 }
 
 
-Queue APIv1::getCurrentQueues() const {
+Queue APIv1::getCurrentQueues() {
+    spdlog::debug("APIv1::getCurrentQueues");
+
     if (!isSessionGenerated()) {
         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
     }
@@ -227,44 +260,19 @@ Queue APIv1::getCurrentQueues() const {
     const std::map<std::string, std::string> parameters {
         {"session_id", mSessionId}  //
     };
-    const std::string url {getRequestEndpoint(ENDPOINT, parameters)};
-
-
-    httplib::Client client {mAddress, mPort};
-    const auto resp {client.Get(url.c_str())};
-
-    if (!resp) {
-        throw NetworkException(NetworkExceptionCode::FAILED_TO_CONNECT);
-    }
-    if (resp->status != static_cast<int>(HttpStatus::OK)) {
-        // TODO: parse error message (if any)
-        throw NetworkException(static_cast<NetworkExceptionCode>(resp->status));
-    }
-
-    json body;
-    try {
-        body = json::parse(resp->body);
-    } catch (...) {
-        throw InvalidFormatException("Response body is no valid JSON", resp->body);
-    }
+    const auto body = doGetRequest(getRequestEndpoint(ENDPOINT, parameters));
 
 
     try {
-        Queue queue;
-        queue.currentlyPlaying = std::nullopt;
-        if (body.find("currently_playing") != body.end() && !body["currently_playing"].empty()) {
-            queue.currentlyPlaying = deserialize<PlayingTrack>(body["currently_playing"]);
-        }
-
-        queue.normalQueue = deserialize<std::vector<NormalQueueTrack>>(body.at("normal_queue"));
-        queue.adminQueue  = deserialize<std::vector<QueueTrack>>(body.at("admin_queue"));
-        return queue;
+        return deserialize<Queue>(body);
     } catch (const json::out_of_range &) {
-        throw InvalidFormatException("An expected field could not be found in JSON object.", resp->body);
+        throw InvalidFormatException("An expected field could not be found in JSON object.", body.dump());
     }
 }
 
-void APIv1::addTrack(const BaseTrack &track, QueueType queueType) const {
+void APIv1::addTrack(const BaseTrack &track, QueueType queueType) {
+    spdlog::debug("APIv1::addTrack: {}, {}", track.trackId, to_string(queueType));
+
     if (!isSessionGenerated()) {
         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
     }
@@ -279,137 +287,72 @@ void APIv1::addTrack(const BaseTrack &track, QueueType queueType) const {
         {"track_id", track.trackId},          //
         {"queue_type", to_string(queueType)}  //
     };
-    const std::string url {getRequestEndpoint(ENDPOINT)};
 
-
-    httplib::Client client {mAddress, mPort};
-    const auto resp {client.Post(url.c_str(), requestBody.dump(), "application/json")};
-
-    // TODO: this endpoint may fail with other errors too
-    if (!resp) {
-        throw NetworkException(NetworkExceptionCode::FAILED_TO_CONNECT);
-    }
-    if (resp->status != static_cast<int>(HttpStatus::OK)) {
-        std::cerr << resp->body << std::endl;
-        throw NetworkException(static_cast<NetworkExceptionCode>(resp->status));
-    }
-
-    json body;
-    try {
-        body = json::parse(resp->body);
-    } catch (...) {
-        throw InvalidFormatException("Response body is no valid JSON", resp->body);
-    }
-
-    // TODO: parse error message (if any)
+    const auto body = doPostRequest(getRequestEndpoint(ENDPOINT), requestBody);
 }
 
-// void APIv1::voteTrack(const BaseTrack &track, Vote vote) const
-// {
-//     if (!isSessionGenerated()) {
-//         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
-//     }
+void APIv1::voteTrack(const BaseTrack &track, Vote vote) {
+    spdlog::debug("APIv1::voteTrack: {}, {}", track.trackId, vote);
 
-//     static const std::string ENDPOINT = "voteTrack";
+    if (!isSessionGenerated()) {
+        throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
+    }
 
-//     const json requestBody = {
-//         { "session_id", mSessionId },
-//         { "track_id", track.trackId },
-//         { "vote", static_cast<int>(vote) }
-//     };
-//     const std::string url = getRequestEndpoint(ENDPOINT);
+    constexpr auto ENDPOINT {"voteTrack"};
 
-
-//     const auto resp = RestClient::put(url, "application/json", requestBody.dump());
-//     // TODO: this endpoint may fail with other errors too
-//     if (resp->status != static_cast<int>(HttpStatus::OK)) {
-//         throw NetworkException(static_cast<NetworkExceptionCode>(resp->status));
-//     }
-
-//     json body;
-//     try {
-//         body = json::parse(resp->body);
-//     } catch (...) {
-//         throw InvalidFormatException("Response body is no valid JSON", resp->body);
-//     }
-
-//     // TODO: parse error message (if any)
-// }
+    const json requestBody {
+        {"session_id", mSessionId},       //
+        {"track_id", track.trackId},      //
+        {"vote", static_cast<int>(vote)}  //
+    };
+    const auto body = doPutRequest(getRequestEndpoint(ENDPOINT), requestBody);
+}
 
 
-// void APIv1::controlPlayer(PlayerAction action) const
-// {
-//     if (!isSessionGenerated()) {
-//         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
-//     }
-//     if (!isAdmin()) {
-//         throw APIException(APIExceptionCode::ADMIN_REQUIRED);
-//     }
+void APIv1::controlPlayer(PlayerAction action) {
+    spdlog::debug("APIv1::controlPlayer: {}", to_string(action));
 
-//     static const std::string ENDPOINT = "controlPlayer";
+    if (!isSessionGenerated()) {
+        throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
+    }
+    if (!isAdmin()) {
+        throw APIException(APIExceptionCode::ADMIN_REQUIRED);
+    }
 
-//     const json requestBody = {
-//         { "session_id", mSessionId },
-//         { "player_action", to_string(action) }
-//     };
-//     const std::string url = getRequestEndpoint(ENDPOINT);
+    constexpr auto ENDPOINT {"controlPlayer"};
 
+    const json requestBody {
+        {"session_id", mSessionId},           //
+        {"player_action", to_string(action)}  //
+    };
+    const auto body = doPutRequest(getRequestEndpoint(ENDPOINT), requestBody);
+}
 
-//     const auto resp = RestClient::put(url, "application/json", requestBody.dump());
-//     // TODO: this endpoint may fail with other errors too
-//     if (resp->status != static_cast<int>(HttpStatus::OK)) {
-//         throw NetworkException(static_cast<NetworkExceptionCode>(resp->status));
-//     }
+void APIv1::moveTrack(const BaseTrack &track, QueueType queueType) {
+    spdlog::debug("APIv1::moveTrack: {}, {}", track.trackId, to_string(queueType));
 
-//     json body;
-//     try {
-//         body = json::parse(resp->body);
-//     } catch (...) {
-//         throw InvalidFormatException("Response body is no valid JSON", resp->body);
-//     }
+    if (!isSessionGenerated()) {
+        throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
+    }
+    if (!isAdmin()) {
+        throw APIException(APIExceptionCode::ADMIN_REQUIRED);
+    }
 
-//     // TODO: parse error message (if any)
-// }
+    constexpr auto ENDPOINT {"moveTrack"};
 
-// void APIv1::moveTrack(const BaseTrack &track, QueueType queueType) const
-// {
-//     if (!isSessionGenerated()) {
-//         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
-//     }
-//     if (!isAdmin()) {
-//         throw APIException(APIExceptionCode::ADMIN_REQUIRED);
-//     }
+    const json requestBody {
+        {"session_id", mSessionId},           //
+        {"track_id", track.trackId},          //
+        {"queue_type", to_string(queueType)}  //
+    };
+    const auto body = doPutRequest(getRequestEndpoint(ENDPOINT), requestBody);
+}
 
-//     static const std::string ENDPOINT = "moveTrack";
+void APIv1::removeTrack(const BaseTrack &track) {
+    spdlog::debug("APIv1::removeTrack: {}", track.trackId);
 
-//     const json requestBody = {
-//         { "session_id", mSessionId },
-//         { "track_id", track.trackId },
-//         { "queue_type", to_string(queueType) }
-//     };
-//     const std::string url = getRequestEndpoint(ENDPOINT);
-
-
-//     const auto resp = RestClient::put(url, "application/json", requestBody.dump());
-//     // TODO: this endpoint may fail with other errors too
-//     if (resp->status != static_cast<int>(HttpStatus::OK)) {
-//         throw NetworkException(static_cast<NetworkExceptionCode>(resp->status));
-//     }
-
-//     json body;
-//     try {
-//         body = json::parse(resp->body);
-//     } catch (...) {
-//         throw InvalidFormatException("Response body is no valid JSON", resp->body);
-//     }
-
-//     // TODO: parse error message (if any)
-// }
-
-// void APIv1::removeTrack(const BaseTrack &) const
-// {
-//     // This endpoint uses a request body for the DELETE endpoint
-//     // instead of query parameters, which is not supported by restclient-cpp
-//     // TODO: implement as soon as the server uses query parameters instead
-//     throw APIException(APIExceptionCode::NOT_IMPLEMENTED);
-// }
+    // This endpoint uses a request body for the DELETE endpoint
+    // instead of query parameters, which is not supported by restclient-cpp
+    // TODO: implement as soon as the server uses query parameters instead
+    throw APIException(APIExceptionCode::NOT_IMPLEMENTED);
+}
