@@ -34,18 +34,16 @@ namespace commands {
     Help::Help(const Commands &commands) : mCommands(commands) {}
 
 
-    bool Help::execute(std::ostream &out, const std::vector<std::string> &arguments) {
+    void Help::doExecute(const std::vector<std::string> &arguments) {
         if (arguments.size() > 1) {
             throw ShellException(ShellExceptionCode::INVALID_ARGUMENT_NUMBER);
         }
 
         if (arguments.empty()) {
-            listCommands(out, mCommands);
+            listCommands(getOut(), mCommands);
         } else {
-            printCommandHelp(out, arguments[0], mCommands);
+            printCommandHelp(getOut(), arguments[0], mCommands);
         }
-
-        return false;
     }
 
     ShellCommandDetails Help::getCommandDetails() const {

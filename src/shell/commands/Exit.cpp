@@ -3,7 +3,7 @@
 
 namespace commands {
 
-    bool Exit::execute(std::ostream & /*out*/, const std::vector<std::string> & /*args*/) { return true; }
+    void Exit::doExecute(const std::vector<std::string> & /*args*/) { closeShell(); }
 
     ShellCommandDetails Exit::getCommandDetails() const {
         ShellCommandDetails details;

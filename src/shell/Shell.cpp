@@ -18,11 +18,15 @@ void Shell::addCommand(const std::string &commandTrigger, std::unique_ptr<ShellC
     if (mCommands.find(commandTrigger) != mCommands.cend()) {
         throw ShellException(ShellExceptionCode::COMMAND_ALREADY_EXISTS);
     }
-    command->setTrigger(commandTrigger);
     mCommands[commandTrigger] = std::move(command);
 }
 
 void Shell::handleInputs(std::istream &in, std::ostream &out) {
+    // Configure all commands
+    std::for_each(std::begin(mCommands), std::end(mCommands),
+                  [&](const auto &kv) { kv.second->configure(out, in, kv.first); });
+
+
     std::string line;
 
     bool exit = false;
@@ -73,7 +77,7 @@ void Shell::handleInputs(std::istream &in, std::ostream &out) {
         // Execute command
         //
         try {
-            exit = commandIt->second->execute(out, arguments);
+            exit = commandIt->second->execute(arguments);
         } catch (const ShellException &ex) {
             switch (ex.getCode()) {
             case ShellExceptionCode::INVALID_ARGUMENT_FORMAT:

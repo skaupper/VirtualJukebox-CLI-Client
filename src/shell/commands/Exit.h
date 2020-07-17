@@ -8,8 +8,10 @@ namespace commands {
 
     class Exit : public ShellCommand {
     public:
-        bool execute(std::ostream &, const std::vector<std::string> &) override;
         ShellCommandDetails getCommandDetails() const override;
+
+    protected:
+        void doExecute(const std::vector<std::string> &) override;
     };
 
 }  // namespace commands

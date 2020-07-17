@@ -131,7 +131,7 @@ static auto parseArgs(const std::vector<std::string> &args) {
 
 namespace commands {
 
-    bool PrintQueues::execute(std::ostream &out, const std::vector<std::string> &args) {
+    void PrintQueues::doExecute(const std::vector<std::string> &args) {
 
         if (std::size(args) > 2) {
             throw ShellException(ShellExceptionCode::INVALID_ARGUMENT_NUMBER);
@@ -145,9 +145,7 @@ namespace commands {
         const auto [queueType, limit] = parseArgs(args);
 
         auto queues = api->getCurrentQueues();
-        printRequestedQueues(out, queues, queueType, limit);
-
-        return false;
+        printRequestedQueues(getOut(), queues, queueType, limit);
     }
 
     ShellCommandDetails PrintQueues::getCommandDetails() const {

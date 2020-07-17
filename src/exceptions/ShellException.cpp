@@ -8,6 +8,9 @@ static std::string mapExceptionCodeToString(ShellExceptionCode code) {
     case ShellExceptionCode::UNKNOWN_COMMAND:
         return "The given command has not been found.";
 
+    case ShellExceptionCode::COMMAND_CONFIGURATION:
+        return "The command has not been configured appropriately.";
+
     case ShellExceptionCode::COMMAND_ALREADY_EXISTS:
         return "A command with the given name already exists.";
 

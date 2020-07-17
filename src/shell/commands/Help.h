@@ -10,8 +10,10 @@ namespace commands {
         friend class ::Shell;
 
     public:
-        bool execute(std::ostream &, const std::vector<std::string> &) override;
         ShellCommandDetails getCommandDetails() const override;
+
+    protected:
+        void doExecute(const std::vector<std::string> &) override;
 
     private:
         explicit Help(const Commands &);

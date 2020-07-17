@@ -25,16 +25,25 @@ class ShellCommand {
 public:
     virtual ~ShellCommand() = default;
 
-    virtual bool execute(std::ostream &, const std::vector<std::string> &) = 0;
-    virtual ShellCommandDetails getCommandDetails() const                  = 0;
+    bool execute(const std::vector<std::string> &);
+    virtual ShellCommandDetails getCommandDetails() const = 0;
 
 protected:
     std::string getTrigger() const;
+    std::ostream &getOut();
+    std::istream &getIn();
+
+    void closeShell();
+
+    virtual void doExecute(const std::vector<std::string> &) = 0;
 
 private:
-    void setTrigger(const std::string &trigger);
+    void configure(std::ostream &, std::istream &, const std::string &trigger);
 
+    bool mCloseShell = false;
     std::string mCommandTrigger;
+    std::ostream *mOutStream = nullptr;
+    std::istream *mInStream  = nullptr;
 };
 
 

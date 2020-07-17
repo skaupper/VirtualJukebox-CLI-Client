@@ -41,7 +41,7 @@ static auto parseArgs(const std::vector<std::string> &args) {
 
 namespace commands {
 
-    bool Login::execute(std::ostream &out, const std::vector<std::string> &args) {
+    void Login::doExecute(const std::vector<std::string> &args) {
 
         if (std::size(args) < 2 || std::size(args) > 4) {
             throw ShellException(ShellExceptionCode::INVALID_ARGUMENT_NUMBER);
@@ -53,13 +53,11 @@ namespace commands {
         auto api = api::v1::createNewApi(address, port);
         if (adminPassword) {
             api->generateAdminSession(adminPassword.value(), nickname);
-            out << "Successfully logged in as admin." << std::endl;
+            getOut() << "Successfully logged in as admin." << std::endl;
         } else {
             api->generateSession(nickname);
-            out << "Successfully logged." << std::endl;
+            getOut() << "Successfully logged." << std::endl;
         }
-
-        return false;
     }
 
     ShellCommandDetails Login::getCommandDetails() const {
