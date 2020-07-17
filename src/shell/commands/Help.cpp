@@ -1,4 +1,4 @@
-#include "CmdHelp.h"
+#include "Help.h"
 
 #include "exceptions/ShellException.h"
 
@@ -21,37 +21,39 @@ static void printCommandHelp(std::ostream &out, const std::string &command, cons
     }
 
     const auto details {commandIt->second->getCommandDetails()};
-    out << command << ":" << std::endl;
     out << "Description : " << details.description << std::endl;
     out << "Usage       : " << details.usage << std::endl;
     for (const auto &[argument, desc] : details.parameterDescription) {
         out << argument << ": " << desc << std::endl;
     }
-    out << std::endl;
 }
 
 
-CmdHelp::CmdHelp(const Commands &commands) : mCommands(commands) {}
+namespace commands {
+
+    Help::Help(const Commands &commands) : mCommands(commands) {}
 
 
-bool CmdHelp::execute(std::ostream &out, const std::vector<std::string> &arguments) {
-    if (arguments.size() > 1) {
-        throw ShellException(ShellExceptionCode::INVALID_ARGUMENTS);
+    bool Help::execute(std::ostream &out, const std::vector<std::string> &arguments) {
+        if (arguments.size() > 1) {
+            throw ShellException(ShellExceptionCode::INVALID_ARGUMENT_NUMBER);
+        }
+
+        if (arguments.empty()) {
+            listCommands(out, mCommands);
+        } else {
+            printCommandHelp(out, arguments[0], mCommands);
+        }
+
+        return false;
     }
 
-    if (arguments.empty()) {
-        listCommands(out, mCommands);
-    } else {
-        printCommandHelp(out, arguments[0], mCommands);
+    ShellCommandDetails Help::getCommandDetails() const {
+        ShellCommandDetails details;
+        details.description = "Lists all available commands or prints the help text for one specific command.";
+        details.usage       = getTrigger() + " [<command>]";
+        details.parameterDescription["<command>"] = "The command whose help text should be printed.";
+        return details;
     }
 
-    return false;
-}
-
-ShellCommandDetails CmdHelp::getCommandDetails() const {
-    ShellCommandDetails details;
-    details.description = "Lists all available commands or prints the help text for one specific command.";
-    details.usage       = getTrigger() + " [<command>]";
-    details.parameterDescription["<command>"] = "The command whose help text should be printed.";
-    return details;
-}
+}  // namespace commands

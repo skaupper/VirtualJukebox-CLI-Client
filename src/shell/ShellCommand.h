@@ -10,9 +10,9 @@
 
 
 struct ShellCommandDetails {
-    std::string description {""};
-    std::string usage {""};
-    std::map<std::string, std::string> parameterDescription {{}};
+    std::string description;
+    std::string usage;
+    std::map<std::string, std::string> parameterDescription;
 };
 
 

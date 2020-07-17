@@ -7,7 +7,8 @@
 enum class ShellExceptionCode : int {
     UNKNOWN_COMMAND,
     COMMAND_ALREADY_EXISTS,
-    INVALID_ARGUMENTS
+    INVALID_ARGUMENT_NUMBER,
+    INVALID_ARGUMENT_FORMAT
     // TODO: to be extended
 };
 

@@ -48,7 +48,7 @@ namespace api::v1::detail {
     }
 
 
-    void deserialize(const json &j, Queue &queue) {
+    void deserialize(const json &j, Queues &queue) {
         queue.currentlyPlaying = std::nullopt;
         if (j.find("currently_playing") != j.end() && !j["currently_playing"].empty()) {
             queue.currentlyPlaying = api::v1::deserialize<PlayingTrack>(static_cast<json>(j["currently_playing"]));

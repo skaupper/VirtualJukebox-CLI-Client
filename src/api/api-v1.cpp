@@ -10,6 +10,7 @@
 
 #include "deserializer.h"
 #include "http-status.h"
+#include "utils/utils.h"
 
 #include "exceptions/APIException.h"
 #include "exceptions/InvalidFormatException.h"
@@ -32,36 +33,6 @@ using namespace api::v1;
 // Helper functions
 //
 
-
-static std::string to_string(PlayerAction action) {
-    switch (action) {
-    case PlayerAction::PLAY:
-        return "play";
-    case PlayerAction::PAUSE:
-        return "pause";
-    case PlayerAction::SKIP:
-        return "skip";
-    case PlayerAction::VOLUME_UP:
-        return "volume_up";
-    case PlayerAction::VOLUME_DOWN:
-        return "volume_down";
-
-    default:
-        throw APIException(APIExceptionCode::UNKNOWN_ENUM_VARIANT);
-    }
-}
-
-static std::string to_string(QueueType queueType) {
-    switch (queueType) {
-    case QueueType::NORMAL:
-        return "normal";
-    case QueueType::ADMIN:
-        return "admin";
-
-    default:
-        throw APIException(APIExceptionCode::UNKNOWN_ENUM_VARIANT);
-    }
-}
 
 static std::string getRequestEndpoint(const std::string &endpoint) {
     constexpr auto ENDPOINT_BASE_PATH {"/api/v1"};
@@ -93,7 +64,8 @@ static std::string getRequestEndpoint(const std::string &endpoint,
 // Constructors and Getters
 //
 
-APIv1::APIv1(const std::string &address, int port) noexcept : mAddress(address), mPort(port), mClient(address, port) {}
+APIv1::APIv1(const std::string &address, const unsigned int port) noexcept
+    : mAddress(address), mPort(port), mClient(address, int(port)) {}
 
 std::string APIv1::getSessionId() const {
     if (!isSessionGenerated()) {
@@ -139,12 +111,15 @@ static json extractJsonBody(const std::shared_ptr<httplib::Response> &resp) {
 
 
 json APIv1::doGetRequest(const char *const url) {
+    spdlog::debug("APIv1::doGetRequest: {}", url);
+
     const auto resp {mClient.Get(url)};
     verifyResponse(resp);
     return extractJsonBody(resp);
 }
 
 json APIv1::doPostRequest(const char *const url, const json &requestBody) {
+    spdlog::debug("APIv1::doPostRequest: {}, {}", url, requestBody.dump());
     const auto resp {mClient.Post(url, requestBody.dump(), "application/json")};
 
     verifyResponse(resp);
@@ -152,7 +127,16 @@ json APIv1::doPostRequest(const char *const url, const json &requestBody) {
 }
 
 json APIv1::doPutRequest(const char *const url, const json &requestBody) {
+    spdlog::debug("APIv1::doPutRequest: {}, {}", url, requestBody.dump());
     const auto resp {mClient.Put(url, requestBody.dump(), "application/json")};
+
+    verifyResponse(resp);
+    return extractJsonBody(resp);
+}
+
+json APIv1::doDeleteRequest(const char *const url, const json &requestBody) {
+    spdlog::debug("APIv1::doDeleteRequest: {}, {}", url, requestBody.dump());
+    const auto resp {mClient.Delete(url, requestBody.dump(), "application/json")};
 
     verifyResponse(resp);
     return extractJsonBody(resp);
@@ -166,20 +150,24 @@ json APIv1::doPostRequest(const std::string &url, const json &requestBody) {
 json APIv1::doPutRequest(const std::string &url, const json &requestBody) {
     return doPutRequest(url.c_str(), requestBody);
 }
+json APIv1::doDeleteRequest(const std::string &url, const json &requestBody) {
+    return doDeleteRequest(url.c_str(), requestBody);
+}
 
 
 //
 // Actual endpoint implementations
 //
 
-void APIv1::generateSession(const std::string &nickname) {
+void APIv1::generateSession(const std::optional<std::string> &nickname) {
     spdlog::debug("APIv1::generateSession: {}", nickname);
 
     constexpr auto ENDPOINT {"generateSession"};
 
-    const json requestBody {
-        {"nickname", nickname}  //
-    };
+    json requestBody;
+    if (nickname) {
+        requestBody["nickname"] = nickname.value();
+    }
 
     const auto body = doPostRequest(getRequestEndpoint(ENDPOINT), requestBody);
 
@@ -195,15 +183,17 @@ void APIv1::generateSession(const std::string &nickname) {
     mIsSessionGenerated = true;
 }
 
-void APIv1::generateAdminSession(const std::string &nickname, const std::string &adminPassword) {
+void APIv1::generateAdminSession(const std::string &adminPassword, const std::optional<std::string> &nickname) {
     spdlog::debug("APIv1::generateAdminSession: {}, {}", nickname, adminPassword);
 
     constexpr auto ENDPOINT {"generateSession"};
 
-    const json requestBody {
-        {"nickname", nickname},      //
+    json requestBody {
         {"password", adminPassword}  //
     };
+    if (nickname) {
+        requestBody["nickname"] = nickname.value();
+    }
 
     const auto body = doPostRequest(getRequestEndpoint(ENDPOINT), requestBody);
 
@@ -248,7 +238,7 @@ std::vector<BaseTrack> APIv1::queryTracks(const std::string &pattern, int maxEnt
 }
 
 
-Queue APIv1::getCurrentQueues() {
+Queues APIv1::getCurrentQueues() {
     spdlog::debug("APIv1::getCurrentQueues");
 
     if (!isSessionGenerated()) {
@@ -264,7 +254,7 @@ Queue APIv1::getCurrentQueues() {
 
 
     try {
-        return deserialize<Queue>(body);
+        return deserialize<Queues>(body);
     } catch (const json::out_of_range &) {
         throw InvalidFormatException("An expected field could not be found in JSON object.", body.dump());
     }
@@ -351,8 +341,18 @@ void APIv1::moveTrack(const BaseTrack &track, QueueType queueType) {
 void APIv1::removeTrack(const BaseTrack &track) {
     spdlog::debug("APIv1::removeTrack: {}", track.trackId);
 
-    // This endpoint uses a request body for the DELETE endpoint
-    // instead of query parameters, which is not supported by restclient-cpp
-    // TODO: implement as soon as the server uses query parameters instead
-    throw APIException(APIExceptionCode::NOT_IMPLEMENTED);
+    if (!isSessionGenerated()) {
+        throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
+    }
+    if (!isAdmin()) {
+        throw APIException(APIExceptionCode::ADMIN_REQUIRED);
+    }
+
+    constexpr auto ENDPOINT {"removeTrack"};
+
+    const json requestBody {
+        {"session_id", mSessionId},  //
+        {"track_id", track.trackId}  //
+    };
+    const auto body = doDeleteRequest(getRequestEndpoint(ENDPOINT), requestBody);
 }

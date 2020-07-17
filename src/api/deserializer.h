@@ -36,7 +36,7 @@ namespace api::v1 {
         void deserialize(const json &, NormalQueueTrack &);
         void deserialize(const json &, PlayingTrack &);
 
-        void deserialize(const json &, Queue &);
+        void deserialize(const json &, Queues &);
 
 
         //

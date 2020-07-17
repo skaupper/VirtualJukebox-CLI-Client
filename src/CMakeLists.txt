@@ -4,9 +4,12 @@ add_executable(
     Exception.cpp
     shell/Shell.cpp
     shell/ShellCommand.cpp
-    shell/commands/CmdHelp.cpp
-    shell/commands/CmdExit.cpp
+    shell/commands/Help.cpp
+    shell/commands/Exit.cpp
+    shell/commands/Login.cpp
+    shell/commands/PrintQueues.cpp
     api/api-v1.cpp
+    api/api-v1-provider.cpp
     api/deserializer.cpp
     exceptions/ShellException.cpp
     exceptions/APIException.cpp
@@ -22,4 +25,8 @@ target_link_libraries(
             CONAN_PKG::spdlog
             CONAN_PKG::nlohmann_json)
 
-target_precompile_headers(virtualjukebox-cli PRIVATE <nlohmann/json.hpp>)
+target_precompile_headers(
+    virtualjukebox-cli
+    PRIVATE
+    <nlohmann/json.hpp>
+    "utils/utils.h")

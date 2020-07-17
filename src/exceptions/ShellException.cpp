@@ -11,8 +11,11 @@ static std::string mapExceptionCodeToString(ShellExceptionCode code) {
     case ShellExceptionCode::COMMAND_ALREADY_EXISTS:
         return "A command with the given name already exists.";
 
-    case ShellExceptionCode::INVALID_ARGUMENTS:
+    case ShellExceptionCode::INVALID_ARGUMENT_NUMBER:
         return "The arguments for the given command are invalid.";
+
+    case ShellExceptionCode::INVALID_ARGUMENT_FORMAT:
+        return "An argument of the given command has invalid format.";
 
     default:
         return "Unknown error (" + std::to_string(static_cast<int>(code)) + ")";
