@@ -141,11 +141,11 @@ static auto parseArgs(const std::vector<std::string> &args) {
 namespace commands::v1 {
 
     void PrintQueues::doExecute(const std::vector<std::string> &args) {
-        auto api = api::v1::Api::getInstance();
 
         const auto [queueType, limit] = parseArgs(args);
+        auto api                      = api::v1::Api::getInstance();
 
-        auto queues = api->getCurrentQueues();
+        const auto queues = api->getCurrentQueues();
         printRequestedQueues(getOut(), queues, queueType, limit);
     }
 

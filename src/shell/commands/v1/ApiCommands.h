@@ -19,6 +19,10 @@ namespace commands::v1 {
     DECLARE_COMMAND(Login);
     DECLARE_COMMAND(PrintQueues);
     DECLARE_COMMAND(AddTrack);
+    DECLARE_COMMAND(Pause);
+    DECLARE_COMMAND(Play);
+    DECLARE_COMMAND(Skip);
+    DECLARE_COMMAND(Volume);
 
 
 #undef DECLARE_COMMAND

@@ -10,8 +10,6 @@ static void listCommands(std::ostream &out, const Commands &commands) {
     for (const auto &[trigger, command] : commands) {
         out << trigger << ": " << command->getCommandDetails().description << std::endl;
     }
-
-    out << std::endl;
 }
 
 static void printCommandHelp(std::ostream &out, const std::string &command, const Commands &commands) {
