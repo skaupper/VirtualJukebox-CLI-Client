@@ -1,6 +1,8 @@
-#include "api/api-v1.h"
+
+
+#include "api/v1/Api.h"
 #include "shell/Shell.h"
-#include "shell/commands/APIv1Commands.h"
+#include "shell/commands/v1/ApiCommands.h"
 
 #include "Exception.h"
 
@@ -9,13 +11,16 @@
 #include <cassert>
 #include <iostream>
 
+#include <sstream>
+
 
 int main() {
     spdlog::set_level(spdlog::level::debug);
 
     Shell shell("VirtualJukebox> ");
-    shell.addCommand("login", std::make_unique<commands::Login>());
-    shell.addCommand("print", std::make_unique<commands::PrintQueues>());
+    shell.addCommand("login", std::make_unique<commands::v1::Login>());
+    shell.addCommand("print", std::make_unique<commands::v1::PrintQueues>());
+    shell.addCommand("addtrack", std::make_unique<commands::v1::AddTrack>());
     shell.handleInputs(std::cin, std::cout);
 
 
@@ -25,7 +30,7 @@ int main() {
     // constexpr auto ADMIN_PASSWORD {"admin"};
 
     // try {
-    //     api::v1::APIv1 api(SERVER_ADDRESS, SERVER_PORT);
+    //     api::v1::API api(SERVER_ADDRESS, SERVER_PORT);
     //     api.generateAdminSession(NICKNAME, ADMIN_PASSWORD);
 
     //     std::cout << "Session ID: " << api.getSessionId() << std::endl;

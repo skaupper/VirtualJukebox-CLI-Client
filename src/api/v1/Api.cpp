@@ -1,15 +1,15 @@
 /*****************************************************************************/
 /**
- * @file    api-v1.cpp
+ * @file    Api.cpp
  * @author  Sebastian Kaupper <kauppersebastian@gmail.com>
  * @brief   Implementation of REST API version 1
  */
 /*****************************************************************************/
 
-#include "api-v1.h"
+#include "Api.h"
 
 #include "deserializer.h"
-#include "http-status.h"
+#include "utils/http-status.h"
 #include "utils/utils.h"
 
 #include "exceptions/APIException.h"
@@ -64,10 +64,10 @@ static std::string getRequestEndpoint(const std::string &endpoint,
 // Constructors and Getters
 //
 
-APIv1::APIv1(const std::string &address, const unsigned int port) noexcept
+Api::Api(const std::string &address, const unsigned int port) noexcept
     : mAddress(address), mPort(port), mClient(address, int(port)) {}
 
-std::string APIv1::getSessionId() const {
+std::string Api::getSessionId() const {
     if (!isSessionGenerated()) {
         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
     }
@@ -76,9 +76,9 @@ std::string APIv1::getSessionId() const {
 }
 
 
-bool APIv1::isAdmin() const noexcept { return mIsAdmin; }
+bool Api::isAdmin() const noexcept { return mIsAdmin; }
 
-bool APIv1::isSessionGenerated() const noexcept { return mIsSessionGenerated; }
+bool Api::isSessionGenerated() const noexcept { return mIsSessionGenerated; }
 
 
 //
@@ -90,12 +90,12 @@ static void verifyResponse(const std::shared_ptr<httplib::Response> &resp) {
         throw NetworkException(NetworkExceptionCode::FAILED_TO_CONNECT, "The response pointer was equal to nullptr.");
     }
 
-    if (resp->status == static_cast<int>(api::HttpStatus::UNAUTHORIZED)) {
+    if (resp->status == static_cast<int>(sk::HttpStatus::UNAUTHORIZED)) {
         throw APIException(APIExceptionCode::INVALID_PASSWORD);
     }
 
 
-    if (resp->status != static_cast<int>(api::HttpStatus::OK)) {
+    if (resp->status != static_cast<int>(sk::HttpStatus::OK)) {
         // TODO: parse error message (if any)
         throw NetworkException(static_cast<NetworkExceptionCode>(resp->status), resp->body);
     }
@@ -110,32 +110,32 @@ static json extractJsonBody(const std::shared_ptr<httplib::Response> &resp) {
 }
 
 
-json APIv1::doGetRequest(const char *const url) {
-    spdlog::debug("APIv1::doGetRequest: {}", url);
+json Api::doGetRequest(const char *const url) {
+    spdlog::debug("Api::doGetRequest: {}", url);
 
     const auto resp {mClient.Get(url)};
     verifyResponse(resp);
     return extractJsonBody(resp);
 }
 
-json APIv1::doPostRequest(const char *const url, const json &requestBody) {
-    spdlog::debug("APIv1::doPostRequest: {}, {}", url, requestBody.dump());
+json Api::doPostRequest(const char *const url, const json &requestBody) {
+    spdlog::debug("Api::doPostRequest: {}, {}", url, requestBody.dump());
     const auto resp {mClient.Post(url, requestBody.dump(), "application/json")};
 
     verifyResponse(resp);
     return extractJsonBody(resp);
 }
 
-json APIv1::doPutRequest(const char *const url, const json &requestBody) {
-    spdlog::debug("APIv1::doPutRequest: {}, {}", url, requestBody.dump());
+json Api::doPutRequest(const char *const url, const json &requestBody) {
+    spdlog::debug("Api::doPutRequest: {}, {}", url, requestBody.dump());
     const auto resp {mClient.Put(url, requestBody.dump(), "application/json")};
 
     verifyResponse(resp);
     return extractJsonBody(resp);
 }
 
-json APIv1::doDeleteRequest(const char *const url, const json &requestBody) {
-    spdlog::debug("APIv1::doDeleteRequest: {}, {}", url, requestBody.dump());
+json Api::doDeleteRequest(const char *const url, const json &requestBody) {
+    spdlog::debug("Api::doDeleteRequest: {}, {}", url, requestBody.dump());
     const auto resp {mClient.Delete(url, requestBody.dump(), "application/json")};
 
     verifyResponse(resp);
@@ -143,14 +143,14 @@ json APIv1::doDeleteRequest(const char *const url, const json &requestBody) {
 }
 
 
-json APIv1::doGetRequest(const std::string &url) { return doGetRequest(url.c_str()); }
-json APIv1::doPostRequest(const std::string &url, const json &requestBody) {
+json Api::doGetRequest(const std::string &url) { return doGetRequest(url.c_str()); }
+json Api::doPostRequest(const std::string &url, const json &requestBody) {
     return doPostRequest(url.c_str(), requestBody);
 }
-json APIv1::doPutRequest(const std::string &url, const json &requestBody) {
+json Api::doPutRequest(const std::string &url, const json &requestBody) {
     return doPutRequest(url.c_str(), requestBody);
 }
-json APIv1::doDeleteRequest(const std::string &url, const json &requestBody) {
+json Api::doDeleteRequest(const std::string &url, const json &requestBody) {
     return doDeleteRequest(url.c_str(), requestBody);
 }
 
@@ -159,8 +159,8 @@ json APIv1::doDeleteRequest(const std::string &url, const json &requestBody) {
 // Actual endpoint implementations
 //
 
-void APIv1::generateSession(const std::optional<std::string> &nickname) {
-    spdlog::debug("APIv1::generateSession: {}", nickname);
+void Api::generateSession(const std::optional<std::string> &nickname) {
+    spdlog::debug("Api::generateSession: {}", nickname);
 
     constexpr auto ENDPOINT {"generateSession"};
 
@@ -183,8 +183,8 @@ void APIv1::generateSession(const std::optional<std::string> &nickname) {
     mIsSessionGenerated = true;
 }
 
-void APIv1::generateAdminSession(const std::string &adminPassword, const std::optional<std::string> &nickname) {
-    spdlog::debug("APIv1::generateAdminSession: {}, {}", nickname, adminPassword);
+void Api::generateAdminSession(const std::string &adminPassword, const std::optional<std::string> &nickname) {
+    spdlog::debug("Api::generateAdminSession: {}, {}", nickname, adminPassword);
 
     constexpr auto ENDPOINT {"generateSession"};
 
@@ -212,8 +212,8 @@ void APIv1::generateAdminSession(const std::string &adminPassword, const std::op
 }
 
 
-std::vector<BaseTrack> APIv1::queryTracks(const std::string &pattern, int maxEntries) {
-    spdlog::debug("APIv1::queryTracks: {}, {}", pattern, maxEntries);
+std::vector<BaseTrack> Api::queryTracks(const std::string &pattern, const unsigned int maxEntries) {
+    spdlog::debug("Api::queryTracks: {}, {}", pattern, maxEntries);
 
     if (!isSessionGenerated()) {
         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
@@ -238,8 +238,8 @@ std::vector<BaseTrack> APIv1::queryTracks(const std::string &pattern, int maxEnt
 }
 
 
-Queues APIv1::getCurrentQueues() {
-    spdlog::debug("APIv1::getCurrentQueues");
+Queues Api::getCurrentQueues() {
+    spdlog::debug("Api::getCurrentQueues");
 
     if (!isSessionGenerated()) {
         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
@@ -260,8 +260,8 @@ Queues APIv1::getCurrentQueues() {
     }
 }
 
-void APIv1::addTrack(const BaseTrack &track, QueueType queueType) {
-    spdlog::debug("APIv1::addTrack: {}, {}", track.trackId, to_string(queueType));
+void Api::addTrack(const BaseTrack &track, const QueueType queueType) {
+    spdlog::debug("Api::addTrack: {}, {}", track.trackId, to_string(queueType));
 
     if (!isSessionGenerated()) {
         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
@@ -281,8 +281,8 @@ void APIv1::addTrack(const BaseTrack &track, QueueType queueType) {
     const auto body = doPostRequest(getRequestEndpoint(ENDPOINT), requestBody);
 }
 
-void APIv1::voteTrack(const BaseTrack &track, Vote vote) {
-    spdlog::debug("APIv1::voteTrack: {}, {}", track.trackId, vote);
+void Api::voteTrack(const BaseTrack &track, const Vote vote) {
+    spdlog::debug("Api::voteTrack: {}, {}", track.trackId, vote);
 
     if (!isSessionGenerated()) {
         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
@@ -299,8 +299,8 @@ void APIv1::voteTrack(const BaseTrack &track, Vote vote) {
 }
 
 
-void APIv1::controlPlayer(PlayerAction action) {
-    spdlog::debug("APIv1::controlPlayer: {}", to_string(action));
+void Api::controlPlayer(const PlayerAction action) {
+    spdlog::debug("Api::controlPlayer: {}", to_string(action));
 
     if (!isSessionGenerated()) {
         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
@@ -318,8 +318,8 @@ void APIv1::controlPlayer(PlayerAction action) {
     const auto body = doPutRequest(getRequestEndpoint(ENDPOINT), requestBody);
 }
 
-void APIv1::moveTrack(const BaseTrack &track, QueueType queueType) {
-    spdlog::debug("APIv1::moveTrack: {}, {}", track.trackId, to_string(queueType));
+void Api::moveTrack(const BaseTrack &track, const QueueType queueType) {
+    spdlog::debug("Api::moveTrack: {}, {}", track.trackId, to_string(queueType));
 
     if (!isSessionGenerated()) {
         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);
@@ -338,8 +338,8 @@ void APIv1::moveTrack(const BaseTrack &track, QueueType queueType) {
     const auto body = doPutRequest(getRequestEndpoint(ENDPOINT), requestBody);
 }
 
-void APIv1::removeTrack(const BaseTrack &track) {
-    spdlog::debug("APIv1::removeTrack: {}", track.trackId);
+void Api::removeTrack(const BaseTrack &track) {
+    spdlog::debug("Api::removeTrack: {}", track.trackId);
 
     if (!isSessionGenerated()) {
         throw APIException(APIExceptionCode::NO_SESSION_GENERATED);

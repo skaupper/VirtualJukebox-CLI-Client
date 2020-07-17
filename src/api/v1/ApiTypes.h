@@ -1,13 +1,13 @@
 /*****************************************************************************/
 /**
- * @file    api-types.h
+ * @file    APITypes.h
  * @author  Sebastian Kaupper <kauppersebastian@gmail.com>
  * @brief   Definition of types used by the REST API version 1
  */
 /*****************************************************************************/
 
-#ifndef API_TYPES_H
-#define API_TYPES_H
+#ifndef API_V1_TYPES_H
+#define API_V1_TYPES_H
 
 #include <optional>
 #include <string>
@@ -92,6 +92,38 @@ namespace api::v1 {
             return "admin";
 
         default:
+            throw APIException(APIExceptionCode::UNKNOWN_ENUM_VARIANT);
+        }
+    }
+
+
+    template<typename T>
+    inline T from_string(const std::string &str);
+
+    template<>
+    inline QueueType from_string(const std::string &str) {
+        if (str == "normal") {
+            return QueueType::NORMAL;
+        } else if (str == "admin") {
+            return QueueType::ADMIN;
+        } else {
+            throw APIException(APIExceptionCode::UNKNOWN_ENUM_VARIANT);
+        }
+    }
+
+    template<>
+    inline PlayerAction from_string(const std::string &str) {
+        if (str == "play") {
+            return PlayerAction::PLAY;
+        } else if (str == "pause") {
+            return PlayerAction::PAUSE;
+        } else if (str == "skip") {
+            return PlayerAction::SKIP;
+        } else if (str == "volume_up") {
+            return PlayerAction::VOLUME_UP;
+        } else if (str == "volume_down") {
+            return PlayerAction::VOLUME_DOWN;
+        } else {
             throw APIException(APIExceptionCode::UNKNOWN_ENUM_VARIANT);
         }
     }

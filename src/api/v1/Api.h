@@ -1,15 +1,15 @@
 /*****************************************************************************/
 /**
- * @file    api-v1.h
+ * @file    Api.h
  * @author  Sebastian Kaupper <kauppersebastian@gmail.com>
- * @brief   Definition of REST API version 1
+ * @brief   Definition of REST Api version 1
  */
 /*****************************************************************************/
 
 #ifndef API_V1_H
 #define API_V1_H
 
-#include "api-types.h"
+#include "api/v1/ApiTypes.h"
 
 #include <httplib/httplib.h>
 #include <nlohmann/json.hpp>
@@ -17,7 +17,7 @@
 
 namespace api::v1 {
 
-    class APIv1 {
+    class Api {
         std::string mAddress;
         unsigned int mPort;
         httplib::Client mClient;
@@ -41,7 +41,7 @@ namespace api::v1 {
 
 
     public:
-        APIv1(const std::string &address, const unsigned int port) noexcept;
+        Api(const std::string &address, const unsigned int port) noexcept;
 
         std::string getSessionId() const;
 
@@ -50,19 +50,29 @@ namespace api::v1 {
 
 
         //
-        // API methods
+        // Api methods
         //
 
         void generateSession(const std::optional<std::string> &nickname);
         void generateAdminSession(const std::string &adminPassword, const std::optional<std::string> &nickname);
-        std::vector<BaseTrack> queryTracks(const std::string &pattern, int maxEntries = 10);
+        std::vector<BaseTrack> queryTracks(const std::string &pattern, const unsigned int maxEntries = 10);
         Queues getCurrentQueues();
-        void addTrack(const BaseTrack &, QueueType = QueueType::NORMAL);
-        void voteTrack(const BaseTrack &, Vote vote);
-        void controlPlayer(PlayerAction action);
-        void moveTrack(const BaseTrack &, QueueType);
+        void addTrack(const BaseTrack &, const QueueType = QueueType::NORMAL);
+        void voteTrack(const BaseTrack &, const Vote vote);
+        void controlPlayer(const PlayerAction action);
+        void moveTrack(const BaseTrack &, const QueueType);
         void removeTrack(const BaseTrack &);
     };
+
+
+    //
+    // Singleton functions
+    // TODO: make a proper singleton
+    //
+
+    Api *createNewApi(const std::string &address, const unsigned int port);
+    Api *getApi();
+    Api *getApiChecked();
 
 }  // namespace api::v1
 

@@ -6,11 +6,12 @@ add_executable(
     shell/ShellCommand.cpp
     shell/commands/Help.cpp
     shell/commands/Exit.cpp
-    shell/commands/Login.cpp
-    shell/commands/PrintQueues.cpp
-    api/api-v1.cpp
-    api/api-v1-provider.cpp
-    api/deserializer.cpp
+    shell/commands/v1/Login.cpp
+    shell/commands/v1/PrintQueues.cpp
+    shell/commands/v1/AddTrack.cpp
+    api/v1/Api.cpp
+    api/v1/ApiSingleton.cpp
+    api/v1/deserializer.cpp
     exceptions/ShellException.cpp
     exceptions/APIException.cpp
     exceptions/InvalidFormatException.cpp

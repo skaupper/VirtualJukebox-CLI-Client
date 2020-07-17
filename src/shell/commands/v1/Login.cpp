@@ -1,8 +1,8 @@
-#include "APIv1Commands.h"
+#include "ApiCommands.h"
 
 #include "utils/utils.h"
 
-#include "api/api-v1-provider.h"
+#include "api/v1/Api.h"
 #include "exceptions/ShellException.h"
 
 
@@ -11,6 +11,11 @@
 //
 
 static auto parseArgs(const std::vector<std::string> &args) {
+
+    if (std::size(args) < 2 || std::size(args) > 4) {
+        throw ShellException(ShellExceptionCode::INVALID_ARGUMENT_NUMBER);
+    }
+
 
     std::string address {args[0]};
     auto port {sk::to_number<unsigned int>(args[1])};
@@ -39,14 +44,9 @@ static auto parseArgs(const std::vector<std::string> &args) {
 // Actual command
 //
 
-namespace commands {
+namespace commands::v1 {
 
     void Login::doExecute(const std::vector<std::string> &args) {
-
-        if (std::size(args) < 2 || std::size(args) > 4) {
-            throw ShellException(ShellExceptionCode::INVALID_ARGUMENT_NUMBER);
-        }
-
 
         const auto [address, port, nickname, adminPassword] = parseArgs(args);
 
@@ -72,4 +72,4 @@ namespace commands {
         return details;
     }
 
-}  // namespace commands
+}  // namespace commands::v1

@@ -77,18 +77,24 @@ void Shell::handleInputs(std::istream &in, std::ostream &out) {
         // Execute command
         //
         try {
-            exit = commandIt->second->execute(arguments);
-        } catch (const ShellException &ex) {
-            switch (ex.getCode()) {
-            case ShellExceptionCode::INVALID_ARGUMENT_FORMAT:
-            case ShellExceptionCode::INVALID_ARGUMENT_NUMBER:
-                out << ex.what() << std::endl;
-                out << "Try 'help " << command << "' for further information." << std::endl;
-                out << std::endl;
-                break;
+            try {
+                exit = commandIt->second->execute(arguments);
+            } catch (const ShellException &ex) {
+                switch (ex.getCode()) {
+                case ShellExceptionCode::INVALID_ARGUMENT_VALUE:
+                    out << ex.what() << std::endl;
+                    break;
 
-            default:
-                throw;
+                case ShellExceptionCode::INVALID_ARGUMENT_FORMAT:
+                case ShellExceptionCode::INVALID_ARGUMENT_NUMBER:
+                    out << ex.what() << std::endl;
+                    out << "Try 'help " << command << "' for further information." << std::endl;
+                    out << std::endl;
+                    break;
+
+                default:
+                    throw;
+                }
             }
         } catch (const std::exception &ex) {
             out << "Unknown exception occurred: " << ex.what() << std::endl;

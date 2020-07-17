@@ -4,7 +4,7 @@
 #include "shell/ShellCommand.h"
 
 
-namespace commands {
+namespace commands::v1 {
 
 #define DECLARE_COMMAND(cmd_name)                                                                                      \
     class cmd_name : public ShellCommand {                                                                             \
@@ -23,6 +23,6 @@ namespace commands {
 
 #undef DECLARE_COMMAND
 
-}  // namespace commands
+}  // namespace commands::v1
 
 #endif

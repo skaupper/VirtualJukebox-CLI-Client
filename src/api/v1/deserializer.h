@@ -9,7 +9,7 @@
 #ifndef DESERIALIZER_H
 #define DESERIALIZER_H
 
-#include "api-types.h"
+#include "ApiTypes.h"
 
 #include "exceptions/InvalidFormatException.h"
 

@@ -20,6 +20,9 @@ static std::string mapExceptionCodeToString(ShellExceptionCode code) {
     case ShellExceptionCode::INVALID_ARGUMENT_FORMAT:
         return "An argument of the given command has invalid format.";
 
+    case ShellExceptionCode::INVALID_ARGUMENT_VALUE:
+        return "An argument of the given command has an invalid value.";
+
     default:
         return "Unknown error (" + std::to_string(static_cast<int>(code)) + ")";
     }

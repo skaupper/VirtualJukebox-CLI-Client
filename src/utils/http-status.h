@@ -9,7 +9,7 @@
 #ifndef HTTP_STATUS_H
 #define HTTP_STATUS_H
 
-namespace api {
+namespace sk {
     enum class HttpStatus {
         OK           = 200,
         NOT_FOUND    = 400,

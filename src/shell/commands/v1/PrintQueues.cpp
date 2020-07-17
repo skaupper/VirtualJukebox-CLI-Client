@@ -1,8 +1,8 @@
-#include "APIv1Commands.h"
+#include "ApiCommands.h"
 
 #include "utils/utils.h"
 
-#include "api/api-v1-provider.h"
+#include "api/v1/Api.h"
 #include "exceptions/ShellException.h"
 
 
@@ -82,43 +82,52 @@ static void printRequestedQueues(std::ostream &out, const Queues &queues, const 
     case RequestedQueues::ALL:
         printCurrentlyPlaying(out, queues);
         out << std::endl;
-        printNormalQueue(out, queues, limit);
-        out << std::endl;
         printAdminQueue(out, queues, limit);
+        out << std::endl;
+        printNormalQueue(out, queues, limit);
         break;
 
     case RequestedQueues::CURRENT:
         printCurrentlyPlaying(out, queues);
         break;
 
-    case RequestedQueues::NORMAL:
-        printNormalQueue(out, queues, limit);
-        break;
-
     case RequestedQueues::ADMIN:
         printAdminQueue(out, queues, limit);
+        break;
+
+    case RequestedQueues::NORMAL:
+        printNormalQueue(out, queues, limit);
         break;
     }
 }
 
 static auto parseArgs(const std::vector<std::string> &args) {
+
+    if (std::size(args) > 2) {
+        throw ShellException(ShellExceptionCode::INVALID_ARGUMENT_NUMBER);
+    }
+
+
     RequestedQueues queueType {RequestedQueues::ALL};
     size_t limit {10};
 
     if (std::size(args) >= 1) {
-        auto optQueueType {getRequestedQueues(args[0])};
+        const auto optQueueType {getRequestedQueues(args[0])};
         if (!optQueueType) {
             throw ShellException(ShellExceptionCode::INVALID_ARGUMENT_FORMAT);
         }
         queueType = optQueueType.value();
+    }
 
-        if (std::size(args) >= 2) {
-            auto optLimit {sk::to_number<unsigned int>(args[1])};
-            if (!optLimit) {
-                throw ShellException(ShellExceptionCode::INVALID_ARGUMENT_FORMAT);
-            }
-            limit = optLimit.value();
+    if (std::size(args) >= 2) {
+        const auto optLimit {sk::to_number<unsigned int>(args[1])};
+        if (!optLimit) {
+            throw ShellException(ShellExceptionCode::INVALID_ARGUMENT_FORMAT);
         }
+        if (optLimit.value() == 0) {
+            throw ShellException(ShellExceptionCode::INVALID_ARGUMENT_VALUE);
+        }
+        limit = optLimit.value();
     }
 
     return std::tuple {queueType, limit};
@@ -129,18 +138,10 @@ static auto parseArgs(const std::vector<std::string> &args) {
 // Actual command
 //
 
-namespace commands {
+namespace commands::v1 {
 
     void PrintQueues::doExecute(const std::vector<std::string> &args) {
-
-        if (std::size(args) > 2) {
-            throw ShellException(ShellExceptionCode::INVALID_ARGUMENT_NUMBER);
-        }
-
-        auto api = api::v1::getApi();
-        if (!api) {
-            throw std::runtime_error("No API session has been generated yet");
-        }
+        auto api = api::v1::getApiChecked();
 
         const auto [queueType, limit] = parseArgs(args);
 
@@ -159,4 +160,4 @@ namespace commands {
         return details;
     }
 
-}  // namespace commands
+}  // namespace commands::v1
