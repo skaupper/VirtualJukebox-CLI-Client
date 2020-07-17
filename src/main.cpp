@@ -25,6 +25,7 @@ int main() {
     shell.addCommand("pause", std::make_unique<commands::v1::Pause>());
     shell.addCommand("skip", std::make_unique<commands::v1::Skip>());
     shell.addCommand("volume", std::make_unique<commands::v1::Volume>());
+    shell.addCommand("vote", std::make_unique<commands::v1::Vote>());
     shell.handleInputs(std::cin, std::cout);
 
     return 0;

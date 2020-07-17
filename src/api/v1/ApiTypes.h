@@ -51,7 +51,7 @@ namespace api::v1 {
     enum class QueueType { NORMAL = 0, ADMIN = 1 };
 
 
-    enum class Vote { DOWN_VOTE = -1, NEUTRAL = 0, UP_VOTE = 1 };
+    enum class Vote { DOWN_VOTE = 0, UP_VOTE = 1 };
 
     enum class PlayerAction {
         PLAY,

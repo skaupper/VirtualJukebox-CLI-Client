@@ -48,10 +48,19 @@ static void printNormalQueue(std::ostream &out, const Queues &queues, const size
         out << "Normal queue:" << std::endl;
 
         const auto tracksToPrint {std::min(limit, std::size(queues.normalQueue))};
-        int trackRank = 1;
+        const auto maxWidthTrack {*std::max_element(std::cbegin(queues.normalQueue), std::cend(queues.normalQueue),
+                                                    [&](const auto &t1, const auto &t2) {
+                                                        return fmt::format("{} - {}", t1.title, t1.artist).size()
+                                                               < fmt::format("{} - {}", t2.title, t2.artist).size();
+                                                    })};
+        const auto trackDescWidth {fmt::format("{} - {}", maxWidthTrack.title, maxWidthTrack.artist).size()};
 
+        int trackRank {1};
         std::for_each_n(std::cbegin(queues.normalQueue), tracksToPrint, [&](const auto &track) {
-            out << fmt::format("  {}: {} - {}", trackRank, track.title, track.artist) << std::endl;
+            const auto trackDesc {fmt::format("{} - {}", track.title, track.artist)};
+            const auto voteDesc {fmt::format("Votes: {}, {}", track.votes,
+                                             (track.currentVote == 0 ? "Not voted yet" : "Already voted"))};
+            out << fmt::format("  {}: {:{}}    {}", trackRank, trackDesc, trackDescWidth, voteDesc) << std::endl;
             ++trackRank;
         });
     } else {
@@ -64,8 +73,8 @@ static void printAdminQueue(std::ostream &out, const Queues &queues, const size_
         out << "Admin queue:" << std::endl;
 
         const auto tracksToPrint {std::min(limit, std::size(queues.adminQueue))};
-        int trackRank = 1;
 
+        int trackRank {1};
         std::for_each_n(std::cbegin(queues.adminQueue), tracksToPrint, [&](const auto &track) {
             out << fmt::format("  {}: {} - {}", trackRank, track.title, track.artist) << std::endl;
             ++trackRank;

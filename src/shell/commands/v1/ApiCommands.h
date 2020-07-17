@@ -23,6 +23,7 @@ namespace commands::v1 {
     DECLARE_COMMAND(Play);
     DECLARE_COMMAND(Skip);
     DECLARE_COMMAND(Volume);
+    DECLARE_COMMAND(Vote);
 
 
 #undef DECLARE_COMMAND
