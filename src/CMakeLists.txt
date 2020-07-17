@@ -10,7 +10,6 @@ add_executable(
     shell/commands/v1/PrintQueues.cpp
     shell/commands/v1/AddTrack.cpp
     api/v1/Api.cpp
-    api/v1/ApiSingleton.cpp
     api/v1/deserializer.cpp
     exceptions/ShellException.cpp
     exceptions/APIException.cpp

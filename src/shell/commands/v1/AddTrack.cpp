@@ -106,7 +106,7 @@ namespace commands::v1 {
     void AddTrack::doExecute(const std::vector<std::string> &args) {
 
         const auto [queueType, limit] = parseArgs(args);
-        auto api                      = api::v1::getApiChecked();
+        auto api                      = api::v1::Api::getInstance();
 
         if (queueType == QueueType::ADMIN && !api->isAdmin()) {
             getOut() << "It needs an admin session to add tracks to the admin queue!" << std::endl

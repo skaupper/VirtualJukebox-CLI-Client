@@ -33,7 +33,6 @@ using namespace api::v1;
 // Helper functions
 //
 
-
 static std::string getRequestEndpoint(const std::string &endpoint) {
     constexpr auto ENDPOINT_BASE_PATH {"/api/v1"};
     return std::string(ENDPOINT_BASE_PATH) + "/" + endpoint;
@@ -57,6 +56,25 @@ static std::string getRequestEndpoint(const std::string &endpoint,
     });
 
     return urlStream.str();
+}
+
+
+//
+// Singleton
+//
+
+std::unique_ptr<Api> Api::instance {nullptr};
+
+Api *Api::createInstance(const std::string &address, const unsigned int port) {
+    instance = std::make_unique<Api>(address, port);
+    return instance.get();
+}
+
+Api *Api::getInstance() {
+    if (!instance) {
+        throw std::runtime_error("No API instance has been generated yet");
+    }
+    return instance.get();
 }
 
 

@@ -50,7 +50,7 @@ namespace commands::v1 {
 
         const auto [address, port, nickname, adminPassword] = parseArgs(args);
 
-        auto api = api::v1::createNewApi(address, port);
+        auto api = api::v1::Api::createInstance(address, port);
         if (adminPassword) {
             api->generateAdminSession(adminPassword.value(), nickname);
             getOut() << "Successfully logged in as admin." << std::endl;

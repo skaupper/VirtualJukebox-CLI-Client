@@ -18,6 +18,15 @@
 namespace api::v1 {
 
     class Api {
+    private:
+        static std::unique_ptr<Api> instance;
+
+    public:
+        static Api *createInstance(const std::string &address, const unsigned int port);
+        static Api *getInstance();
+
+
+    private:
         std::string mAddress;
         unsigned int mPort;
         httplib::Client mClient;
@@ -63,16 +72,6 @@ namespace api::v1 {
         void moveTrack(const BaseTrack &, const QueueType);
         void removeTrack(const BaseTrack &);
     };
-
-
-    //
-    // Singleton functions
-    // TODO: make a proper singleton
-    //
-
-    Api *createNewApi(const std::string &address, const unsigned int port);
-    Api *getApi();
-    Api *getApiChecked();
 
 }  // namespace api::v1
 
